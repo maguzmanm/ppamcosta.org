@@ -24,7 +24,7 @@ export async function list(req: Request, res: Response, next: NextFunction) {
         location: { select: { id: true, name: true } },
         timeSlot: true,
         createdBy: {
-          select: { id: true, publisher: { select: { firstName: true, lastName: true } } },
+          select: { id: true, publisherId: true },
         },
         assignments: {
           include: {
@@ -48,7 +48,7 @@ export async function getById(req: Request, res: Response, next: NextFunction) {
         location: true,
         timeSlot: true,
         createdBy: {
-          select: { id: true, publisher: { select: { firstName: true, lastName: true } } },
+          select: { id: true, publisherId: true },
         },
         assignments: {
           include: {
