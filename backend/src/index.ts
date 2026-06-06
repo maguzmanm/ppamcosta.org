@@ -55,7 +55,7 @@ async function ensureDatabase() {
     if (userCount === 0) {
       console.log('🌱 BD vacía, ejecutando seed...');
       const { execSync } = require('child_process');
-      execSync('npx tsx prisma/seed.ts', { stdio: 'inherit', cwd: __dirname + '/..' });
+      execSync('npx tsx prisma/seed.ts', { stdio: 'inherit', cwd: process.cwd() });
       console.log('✅ Seed completado');
     }
   } catch (e: any) {
