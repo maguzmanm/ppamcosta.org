@@ -28,7 +28,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="w-full max-w-md p-8 bg-surface rounded-xl shadow-lg border border-border">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-primary">PPAM</h1>
+          <h1 className="text-2xl font-bold text-primary">PPAM Costa</h1>
           <p className="text-text-secondary mt-2">
             Predicación Pública Áreas Metropolitanas
           </p>
@@ -87,7 +87,7 @@ export default function LoginPage() {
         </form>
 
         <p className="text-center text-text-muted text-xs mt-6">
-          Todos los derechos reservados. PPAM Chile © 2026
+          Todos los derechos reservados. PPAM Costa © 2026
         </p>
       </div>
     </div>

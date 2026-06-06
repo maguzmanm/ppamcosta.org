@@ -42,7 +42,7 @@ export default function DashboardLayout() {
   const sidebar = (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b border-border">
-        <h1 className="text-lg font-bold text-primary">PPAM Admin</h1>
+        <h1 className="text-lg font-bold text-primary">PPAM Costa</h1>
         <p className="text-xs text-text-muted mt-0.5">{user?.email}</p>
         <span className="inline-block mt-2 px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
           {user?.role?.replace(/_/g, ' ')}
@@ -133,7 +133,7 @@ export default function DashboardLayout() {
           >
             <Menu size={24} />
           </button>
-          <h1 className="text-lg font-bold text-primary">PPAM Admin</h1>
+          <h1 className="text-lg font-bold text-primary">PPAM Costa</h1>
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
