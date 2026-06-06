@@ -14,7 +14,6 @@ import { announcementRouter } from './routes/announcements';
 import { notificationRouter } from './routes/notifications';
 import { incidentRouter } from './routes/incidents';
 import { errorHandler } from './middleware/errorHandler';
-import prisma from './prisma';
 
 dotenv.config();
 
@@ -44,52 +43,11 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Seed endpoint (ejecutar manualmente si es necesario)
-app.post('/api/seed', async (_req, res) => {
-  try {
-    const { execSync } = require('child_process');
-    const output = execSync('npx prisma db push --accept-data-loss 2>&1 && npx tsx prisma/seed.ts 2>&1', {
-      cwd: process.cwd(),
-      timeout: 60000,
-      encoding: 'utf8',
-    });
-    res.json({ ok: true, output });
-  } catch (e: any) {
-    res.status(500).json({ ok: false, error: e.message, stderr: e.stderr?.toString(), stdout: e.stdout?.toString() });
-  }
-});
-
 // Error handler
 app.use(errorHandler);
 
-// En producción, verificar si la BD necesita seed
-async function ensureDatabase() {
-  if (process.env.NODE_ENV !== 'production') return;
-  const fs = require('fs');
-  const dbPath = require('path').join(process.cwd(), 'prisma', 'dev.db');
-  const isNew = !fs.existsSync(dbPath);
-  
-  if (isNew) {
-    console.log('🌱 Base de datos nueva. Creando tablas y datos...');
-    try {
-      const { execSync } = require('child_process');
-      console.log('📦 Creando tablas...');
-      execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit', cwd: process.cwd() });
-      console.log('📦 Insertando datos...');
-      execSync('npx tsx prisma/seed.ts', { stdio: 'inherit', cwd: process.cwd() });
-      console.log('✅ Seed completado');
-    } catch (e: any) {
-      console.error('⚠️ Error en seed automático:', e.message);
-    }
-  } else {
-    console.log('💾 Base de datos existente encontrada');
-  }
-}
-
-ensureDatabase().then(() => {
-  app.listen(Number(PORT), '0.0.0.0', () => {
-    console.log(`🚀 Servidor PPAM corriendo en http://0.0.0.0:${PORT}`);
-  });
+app.listen(Number(PORT), '0.0.0.0', () => {
+  console.log(`🚀 Servidor PPAM corriendo en http://0.0.0.0:${PORT}`);
 });
 });
 
