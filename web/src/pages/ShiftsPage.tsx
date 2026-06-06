@@ -94,6 +94,7 @@ export default function ShiftsPage() {
         timeSlotId: payload.timeSlotId,
         maxPublishers: payload.maxPublishers,
         notes: payload.notes,
+        publisherIds: [payload.publisher1Id, payload.publisher2Id].filter(Boolean),
       };
       return api.put(`/shifts/${payload.id}`, body);
     },

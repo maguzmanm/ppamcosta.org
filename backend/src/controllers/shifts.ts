@@ -172,11 +172,12 @@ export async function create(req: Request, res: Response, next: NextFunction) {
 
 export async function update(req: Request, res: Response, next: NextFunction) {
   try {
-    const { date, timeSlotId, maxPublishers, status, notes } = req.body;
+    const { date, timeSlotId, maxPublishers, status, notes, locationId, publisherIds } = req.body;
 
     const shift = await prisma.shift.update({
       where: { id: req.params.id },
       data: {
+        ...(locationId && { locationId }),
         ...(date && { date: new Date(date) }),
         ...(timeSlotId && { timeSlotId }),
         ...(maxPublishers !== undefined && { maxPublishers }),
@@ -184,6 +185,29 @@ export async function update(req: Request, res: Response, next: NextFunction) {
         ...(notes !== undefined && { notes }),
       },
     });
+
+    // Actualizar asignaciones de publicadores
+    if (publisherIds && Array.isArray(publisherIds)) {
+      // Eliminar asignaciones que ya no están
+      await prisma.shiftAssignment.deleteMany({
+        where: {
+          shiftId: shift.id,
+          publisherId: { notIn: publisherIds.filter(Boolean) },
+        },
+      });
+
+      // Agregar nuevas asignaciones
+      for (const pubId of publisherIds) {
+        if (!pubId) continue;
+        await prisma.shiftAssignment.upsert({
+          where: {
+            shiftId_publisherId: { shiftId: shift.id, publisherId: pubId },
+          },
+          create: { shiftId: shift.id, publisherId: pubId, status: 'PENDIENTE' },
+          update: {},
+        });
+      }
+    }
 
     // Si se cancela, notificar a los asignados
     if (status === 'CANCELADO') {
