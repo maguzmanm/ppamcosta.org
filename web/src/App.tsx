@@ -11,6 +11,7 @@ import CongregationsPage from './pages/CongregationsPage';
 import LocationsPage from './pages/LocationsPage';
 import ShiftsPage from './pages/ShiftsPage';
 import ExperiencesPage from './pages/ExperiencesPage';
+import AvailabilityPage from './pages/AvailabilityPage';
 import ProfilePage from './pages/ProfilePage';
 import PlaceholderPage from './components/PlaceholderPage';
 import type { UserRole } from './types';
@@ -99,6 +100,14 @@ function AppRoutes() {
           }
         />
         <Route path="/experiencias" element={<ExperiencesPage />} />
+        <Route
+          path="/disponibilidad"
+          element={
+            <ProtectedRoute roles={['COORDINADOR', 'AUXILIAR', 'ENCARGADO_PUNTO', 'AUXILIAR_PUNTO']}>
+              <AvailabilityPage />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/anuncios" element={<PlaceholderPage title="Anuncios" />} />
         <Route path="/noticias" element={<PlaceholderPage title="Noticias" />} />
         <Route
