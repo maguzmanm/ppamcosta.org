@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil } from 'lucide-react';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
 import api from '../services/api';
 import DataTable from '../components/DataTable';
 import Modal from '../components/Modal';
@@ -104,6 +104,11 @@ export default function ShiftsPage() {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/shifts/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['shifts'] }),
+  });
+
   function resetForm() {
     setEditing(null);
     setForm({ locationId: '', date: '', timeSlotId: '', maxPublishers: 2, notes: '', publisher1Id: '', publisher2Id: '' });
@@ -148,11 +153,16 @@ export default function ShiftsPage() {
           { key: 'status', header: 'Estado', render: (s) => <Badge variant={statusBadge[s.status] || 'default'}>{s.status}</Badge> },
           { key: 'assignments', header: 'Asignados', render: (s) => `${s.assignments?.length || 0}/${s.maxPublishers}` },
           ...(canCreateShifts ? [{
-            key: 'actions', header: '', className: 'w-16' as const,
+            key: 'actions', header: '', className: 'w-24' as const,
             render: (s: Shift) => (
-              <button onClick={(e) => { e.stopPropagation(); openEdit(s); }} className="p-1.5 rounded hover:bg-surface-hover text-text-muted hover:text-primary">
-                <Pencil size={16} />
-              </button>
+              <div className="flex gap-1">
+                <button onClick={(e) => { e.stopPropagation(); openEdit(s); }} className="p-1.5 rounded hover:bg-surface-hover text-text-muted hover:text-primary">
+                  <Pencil size={16} />
+                </button>
+                <button onClick={(e) => { e.stopPropagation(); if (confirm('¿Eliminar este turno?')) deleteMutation.mutate(s.id); }} className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-text-muted hover:text-danger">
+                  <Trash2 size={16} />
+                </button>
+              </div>
             ),
           }] : []),
         ]}
