@@ -50,16 +50,24 @@ app.use(errorHandler);
 // En producción, verificar si la BD necesita seed
 async function ensureDatabase() {
   if (process.env.NODE_ENV !== 'production') return;
-  try {
-    const userCount = await prisma.user.count();
-    if (userCount === 0) {
-      console.log('🌱 BD vacía, ejecutando seed...');
+  const fs = require('fs');
+  const dbPath = require('path').join(process.cwd(), 'prisma', 'dev.db');
+  const isNew = !fs.existsSync(dbPath);
+  
+  if (isNew) {
+    console.log('🌱 Base de datos nueva. Creando tablas y datos...');
+    try {
       const { execSync } = require('child_process');
+      console.log('📦 Creando tablas...');
+      execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit', cwd: process.cwd() });
+      console.log('📦 Insertando datos...');
       execSync('npx tsx prisma/seed.ts', { stdio: 'inherit', cwd: process.cwd() });
       console.log('✅ Seed completado');
+    } catch (e: any) {
+      console.error('⚠️ Error en seed automático:', e.message);
     }
-  } catch (e: any) {
-    console.error('⚠️ Error en seed automático:', e.message);
+  } else {
+    console.log('💾 Base de datos existente encontrada');
   }
 }
 
