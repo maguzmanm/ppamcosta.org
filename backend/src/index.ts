@@ -44,6 +44,21 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Seed endpoint (ejecutar manualmente si es necesario)
+app.post('/api/seed', async (_req, res) => {
+  try {
+    const { execSync } = require('child_process');
+    const output = execSync('npx prisma db push --accept-data-loss 2>&1 && npx tsx prisma/seed.ts 2>&1', {
+      cwd: process.cwd(),
+      timeout: 60000,
+      encoding: 'utf8',
+    });
+    res.json({ ok: true, output });
+  } catch (e: any) {
+    res.status(500).json({ ok: false, error: e.message, stderr: e.stderr?.toString(), stdout: e.stdout?.toString() });
+  }
+});
+
 // Error handler
 app.use(errorHandler);
 
