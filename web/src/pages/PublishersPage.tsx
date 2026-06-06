@@ -7,6 +7,26 @@ import Modal from '../components/Modal';
 import Badge from '../components/Badge';
 import type { Publisher, Congregation, UserRole } from '../types';
 
+const DESIGNATIONS = [
+  'MISIONERO',
+  'PRECURSOR_ESPECIAL',
+  'FAMILIA_BETEL',
+  'PRECURSOR_REGULAR',
+  'PUBLICADOR',
+  'ANCIANO',
+  'SIERVO_MINISTERIAL',
+];
+
+const DESIGNATION_LABELS: Record<string, string> = {
+  MISIONERO: 'Misionero que sirve en el campo',
+  PRECURSOR_ESPECIAL: 'Precursor especial',
+  FAMILIA_BETEL: 'Miembro de la familia Betel',
+  PRECURSOR_REGULAR: 'Precursor regular',
+  PUBLICADOR: 'Publicador',
+  ANCIANO: 'Anciano',
+  SIERVO_MINISTERIAL: 'Siervo ministerial',
+};
+
 const ROLES: { value: UserRole; label: string }[] = [
   { value: 'COORDINADOR', label: 'Coordinador' },
   { value: 'AUXILIAR', label: 'Auxiliar' },
@@ -46,6 +66,8 @@ export default function PublishersPage() {
     password: '',
     isActive: true,
     notes: '',
+    designations: [] as string[],
+    otherDesignation: '',
   });
 
   const { data: publishers, isLoading } = useQuery({
@@ -97,6 +119,8 @@ export default function PublishersPage() {
       password: '',
       isActive: true,
       notes: '',
+      designations: [],
+      otherDesignation: '',
     });
   }
 
@@ -107,6 +131,16 @@ export default function PublishersPage() {
 
   function openEdit(p: Publisher) {
     setEditing(p);
+    let existingDesignations: string[] = [];
+    let otherDes = '';
+    try {
+      if (p.designations) {
+        const parsed = JSON.parse(p.designations);
+        existingDesignations = parsed.filter((d: string) => DESIGNATIONS.includes(d));
+        otherDes = parsed.find((d: string) => !DESIGNATIONS.includes(d)) || '';
+      }
+    } catch { /* ignorar */ }
+    
     setForm({
       firstName: p.firstName,
       lastName: p.lastName,
@@ -119,13 +153,22 @@ export default function PublishersPage() {
       password: '',
       isActive: p.isActive,
       notes: p.notes || '',
+      designations: existingDesignations,
+      otherDesignation: otherDes,
     });
     setModalOpen(true);
   }
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    saveMutation.mutate({ ...form, id: editing?.id });
+    const allDesignations = [...form.designations];
+    if (form.otherDesignation.trim()) {
+      allDesignations.push(form.otherDesignation.trim());
+    }
+    const payload: any = { ...form };
+    payload.designations = allDesignations.length > 0 ? JSON.stringify(allDesignations) : null;
+    delete payload.otherDesignation;
+    saveMutation.mutate({ ...payload, id: editing?.id });
   }
 
   const roleBadge = (role?: string) => {
@@ -259,6 +302,37 @@ export default function PublishersPage() {
             <label className="block text-sm font-medium text-text-secondary mb-1">Contraseña {editing ? '(dejar vacía para no cambiar)' : ''}</label>
             <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })}
               className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm" />
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-text-secondary mb-2">Designaciones</label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
+            {DESIGNATIONS.map((des) => (
+              <label key={des} className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.designations.includes(des)}
+                  onChange={(e) => {
+                    setForm({
+                      ...form,
+                      designations: e.target.checked
+                        ? [...form.designations, des]
+                        : form.designations.filter((d) => d !== des),
+                    });
+                  }}
+                  className="rounded border-border"
+                />
+                {DESIGNATION_LABELS[des]}
+              </label>
+            ))}
+          </div>
+          <div className="mt-2">
+            <input
+              value={form.otherDesignation}
+              onChange={(e) => setForm({ ...form, otherDesignation: e.target.value })}
+              placeholder="Otro (especificar)"
+              className="w-full max-w-sm px-3 py-1.5 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
+            />
           </div>
         </div>
         <div>

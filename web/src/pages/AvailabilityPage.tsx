@@ -5,7 +5,9 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import type { Publisher, TimeSlot, Availability } from '../types';
 
-const DAY_NAMES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+const DAY_NAMES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+// Mapeo visual → dayOfWeek: Lun=1, Mar=2, Mié=3, Jue=4, Vie=5, Sáb=6, Dom=0
+const DAY_TO_INDEX = [1, 2, 3, 4, 5, 6, 0];
 
 export default function AvailabilityPage() {
   const { user, role } = useAuth();
@@ -151,11 +153,12 @@ export default function AvailabilityPage() {
                         </span>
                       </td>
                       {DAY_NAMES.map((_, dayIdx) => {
-                        const available = isAvailable(dayIdx, slot.id);
+                        const realDay = DAY_TO_INDEX[dayIdx];
+                        const available = isAvailable(realDay, slot.id);
                         return (
                           <td key={dayIdx} className="px-2 py-3 text-center">
                             <button
-                              onClick={() => toggleAvailability(dayIdx, slot.id)}
+                              onClick={() => toggleAvailability(realDay, slot.id)}
                               className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
                                 available
                                   ? 'bg-green-100 dark:bg-green-900/30 text-success hover:bg-green-200'
