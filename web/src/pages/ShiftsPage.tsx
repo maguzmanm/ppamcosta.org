@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus } from 'lucide-react';
+import { Plus, Pencil } from 'lucide-react';
 import api from '../services/api';
 import DataTable from '../components/DataTable';
 import Modal from '../components/Modal';
@@ -32,6 +32,7 @@ export default function ShiftsPage() {
   const queryClient = useQueryClient();
   const { canCreateShifts } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<Shift | null>(null);
   const [form, setForm] = useState({
     locationId: '', date: '', timeSlotId: '', maxPublishers: 2, notes: '',
     publisher1Id: '', publisher2Id: '',
@@ -81,16 +82,59 @@ export default function ShiftsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shifts'] });
       setModalOpen(false);
-      setForm({ locationId: '', date: '', timeSlotId: '', maxPublishers: 2, notes: '', publisher1Id: '', publisher2Id: '' });
+      resetForm();
     },
   });
+
+  const updateMutation = useMutation({
+    mutationFn: async (payload: typeof form & { id: string }) => {
+      const body: any = {
+        locationId: payload.locationId,
+        date: payload.date,
+        timeSlotId: payload.timeSlotId,
+        maxPublishers: payload.maxPublishers,
+        notes: payload.notes,
+      };
+      return api.put(`/shifts/${payload.id}`, body);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['shifts'] });
+      setModalOpen(false);
+      resetForm();
+    },
+  });
+
+  function resetForm() {
+    setEditing(null);
+    setForm({ locationId: '', date: '', timeSlotId: '', maxPublishers: 2, notes: '', publisher1Id: '', publisher2Id: '' });
+  }
+
+  function openCreate() {
+    resetForm();
+    setModalOpen(true);
+  }
+
+  function openEdit(s: Shift) {
+    setEditing(s);
+    const existingIds = (s.assignments || []).map((a: any) => a.publisherId);
+    setForm({
+      locationId: s.locationId,
+      date: s.date?.split('T')[0] || '',
+      timeSlotId: s.timeSlotId,
+      maxPublishers: s.maxPublishers,
+      notes: s.notes || '',
+      publisher1Id: existingIds[0] || '',
+      publisher2Id: existingIds[1] || '',
+    });
+    setModalOpen(true);
+  }
 
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <h2 className="text-2xl font-bold text-text-primary">Turnos</h2>
         {canCreateShifts && (
-          <button onClick={() => setModalOpen(true)} className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-light transition-colors text-sm font-medium">
+          <button onClick={openCreate} className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-light transition-colors text-sm font-medium">
             <Plus size={18} /> Nuevo turno
           </button>
         )}
@@ -103,13 +147,23 @@ export default function ShiftsPage() {
           { key: 'time', header: 'Horario', render: (s) => s.timeSlot?.name || '-' },
           { key: 'status', header: 'Estado', render: (s) => <Badge variant={statusBadge[s.status] || 'default'}>{s.status}</Badge> },
           { key: 'assignments', header: 'Asignados', render: (s) => `${s.assignments?.length || 0}/${s.maxPublishers}` },
+          ...(canCreateShifts ? [{
+            key: 'actions', header: '', className: 'w-16' as const,
+            render: (s: Shift) => (
+              <button onClick={(e) => { e.stopPropagation(); openEdit(s); }} className="p-1.5 rounded hover:bg-surface-hover text-text-muted hover:text-primary">
+                <Pencil size={16} />
+              </button>
+            ),
+          }] : []),
         ]}
         data={shifts || []} keyExtractor={(s) => s.id} loading={isLoading}
       />
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Nuevo turno"
-        onSubmit={(e) => { e.preventDefault(); createMutation.mutate(form); }}
-        submitLabel="Crear turno" loading={createMutation.isPending}>
+      <Modal open={modalOpen} onClose={() => { setModalOpen(false); resetForm(); }}
+        title={editing ? 'Editar turno' : 'Nuevo turno'}
+        onSubmit={(e) => { e.preventDefault(); editing ? updateMutation.mutate({ ...form, id: editing.id }) : createMutation.mutate(form); }}
+        submitLabel={editing ? 'Guardar cambios' : 'Crear turno'}
+        loading={createMutation.isPending || updateMutation.isPending}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">Punto</label>
