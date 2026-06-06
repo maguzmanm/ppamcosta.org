@@ -1,11 +1,11 @@
-import { useState, type FormEvent } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Check, X, Calendar } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import api from '../services/api';
 import DataTable from '../components/DataTable';
 import Modal from '../components/Modal';
 import Badge from '../components/Badge';
-import type { Shift, Location, TimeSlot, Publisher } from '../types';
+import type { Shift, Location, TimeSlot } from '../types';
 import { useAuth } from '../context/AuthContext';
 
 const statusBadge: Record<string, 'success' | 'warning' | 'danger' | 'default'> = {

@@ -4,7 +4,7 @@ import { Sun, Moon, Monitor } from 'lucide-react';
 
 export default function ProfilePage() {
   const { user, logout } = useAuth();
-  const { theme, setTheme, resolved } = useTheme();
+  const { theme, setTheme } = useTheme();
 
   return (
     <div>

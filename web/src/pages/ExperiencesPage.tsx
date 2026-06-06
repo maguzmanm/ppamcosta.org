@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Check, X, Eye } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import api from '../services/api';
 import DataTable from '../components/DataTable';
 import Badge from '../components/Badge';

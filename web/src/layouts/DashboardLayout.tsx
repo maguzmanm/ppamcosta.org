@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { Menu, X, Sun, Moon, LogOut, LayoutDashboard, GitBranch, Building2, Users, MapPin, Calendar, FileText, Megaphone, Newspaper, BarChart3, Settings } from 'lucide-react';
+import { Menu, Sun, Moon, LogOut, LayoutDashboard, GitBranch, Building2, Users, MapPin, Calendar, FileText, Megaphone, Newspaper, BarChart3, Settings } from 'lucide-react';
 import type { UserRole } from '../types';
 
 interface NavItem {
@@ -27,7 +27,7 @@ const navItems: NavItem[] = [
 
 export default function DashboardLayout() {
   const { user, logout, role } = useAuth();
-  const { resolved, setTheme, theme } = useTheme();
+  const { resolved, setTheme } = useTheme();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
