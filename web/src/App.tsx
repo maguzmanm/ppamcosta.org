@@ -102,11 +102,7 @@ function AppRoutes() {
         <Route path="/experiencias" element={<ExperiencesPage />} />
         <Route
           path="/disponibilidad"
-          element={
-            <ProtectedRoute roles={['COORDINADOR', 'AUXILIAR', 'ENCARGADO_PUNTO', 'AUXILIAR_PUNTO']}>
-              <AvailabilityPage />
-            </ProtectedRoute>
-          }
+          element={<AvailabilityPage />}
         />
         <Route path="/anuncios" element={<PlaceholderPage title="Anuncios" />} />
         <Route path="/noticias" element={<PlaceholderPage title="Noticias" />} />
