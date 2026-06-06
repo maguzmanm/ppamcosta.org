@@ -13,7 +13,6 @@ import { experienceRouter } from './routes/experiences';
 import { announcementRouter } from './routes/announcements';
 import { notificationRouter } from './routes/notifications';
 import { incidentRouter } from './routes/incidents';
-import { seedRouter } from './routes/seed';
 import { errorHandler } from './middleware/errorHandler';
 
 dotenv.config();
@@ -38,11 +37,25 @@ app.use('/api/experiences', experienceRouter);
 app.use('/api/announcements', announcementRouter);
 app.use('/api/notifications', notificationRouter);
 app.use('/api/incidents', incidentRouter);
-app.use('/api/seed', seedRouter);
 
 // Health check
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Seed endpoint
+app.post('/api/seed', async (_req, res) => {
+  try {
+    const { execSync } = await import('child_process');
+    const output = execSync('npx prisma db push --accept-data-loss 2>&1 && npx tsx prisma/seed.ts 2>&1', {
+      cwd: process.cwd(),
+      timeout: 120000,
+      encoding: 'utf8',
+    });
+    res.json({ ok: true, output });
+  } catch (e: any) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 // Error handler
