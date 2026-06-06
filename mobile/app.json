@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "PPAM",
+    "slug": "ppam-mobile",
+    "version": "1.0.0",
+    "orientation": "default",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#1a365d"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "org.ppam.mobile"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#1a365d"
+      },
+      "package": "org.ppam.mobile"
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
+  }
+}

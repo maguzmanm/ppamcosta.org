@@ -1,0 +1,282 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Circuitos ───
+model Circuit {
+  id            String         @id @default(uuid())
+  name          String         @unique
+  congregations Congregation[]
+  createdAt     DateTime       @default(now()) @map("created_at")
+
+  @@map("circuits")
+}
+
+// ─── Congregaciones ───
+model Congregation {
+  id         String       @id @default(uuid())
+  name       String
+  circuitId  String       @map("circuit_id")
+  circuit    Circuit      @relation(fields: [circuitId], references: [id])
+  publishers Publisher[]
+  createdAt  DateTime     @default(now()) @map("created_at")
+
+  @@map("congregations")
+}
+
+// ─── Franjas horarias ───
+model TimeSlot {
+  id        String   @id @default(uuid())
+  name      String   @unique   // ej. "Mañana 9-12", "Tarde 12-15", "Noche 18-21"
+  startTime String   @map("start_time") // "09:00"
+  endTime   String   @map("end_time")   // "12:00"
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  availabilities Availability[]
+  shifts         Shift[]
+
+  @@map("time_slots")
+}
+
+// ─── Publicadores ───
+model Publisher {
+  id             String         @id @default(uuid())
+  firstName      String         @map("first_name")
+  lastName       String         @map("last_name")
+  marriedLastName String?       @map("married_last_name")
+  designations   String?       // JSON: ["ANCIANO","PRECURSOR_REGULAR",...]
+  gender         String?       // "M" o "F"
+  // displayName: si marriedLastName existe → "firstName de marriedLastName"
+  congregationId String         @map("congregation_id")
+  congregation   Congregation   @relation(fields: [congregationId], references: [id])
+  phone          String?
+  email          String?
+  isActive       Boolean        @default(true) @map("is_active")
+  notes          String?
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  user           User?
+  availabilities Availability[]
+  shiftAssignments ShiftAssignment[]
+  experiences    Experience[]
+
+  @@map("publishers")
+}
+
+// ─── Usuarios ───
+model User {
+  id            String     @id @default(uuid())
+  email         String     @unique
+  passwordHash  String     @map("password_hash")
+  role          String
+  publisherId   String     @unique @map("publisher_id")
+  publisher     Publisher  @relation(fields: [publisherId], references: [id])
+  resetToken    String?    @map("reset_token")
+  resetTokenExp DateTime?  @map("reset_token_exp")
+  createdAt     DateTime   @default(now()) @map("created_at")
+
+  // Turnos creados por este usuario
+  createdShifts   Shift[]           @relation("ShiftCreator")
+  // Puntos donde es encargado/auxiliar
+  locationAssignments LocationAssignment[]
+  // Noticias/experiencias creadas
+  news            News[]
+  announcements   Announcement[]
+  // Notificaciones
+  deviceToken     DeviceToken?
+  notificationPref NotificationPreference?
+  notifications   Notification[]
+  // Incidentes
+  reportedIncidents  Incident[]  @relation("IncidentReporter")
+  respondedIncidents Incident[]  @relation("IncidentResponder")
+
+  @@map("users")
+}
+
+// ─── Disponibilidad del publicador ───
+model Availability {
+  id          String   @id @default(uuid())
+  publisherId String   @map("publisher_id")
+  publisher   Publisher @relation(fields: [publisherId], references: [id])
+  timeSlotId  String   @map("time_slot_id")
+  timeSlot    TimeSlot @relation(fields: [timeSlotId], references: [id])
+  dayOfWeek   Int      @map("day_of_week") // 0=Dom, 1=Lun, ... 6=Sáb
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([publisherId, timeSlotId, dayOfWeek])
+  @@map("availability")
+}
+
+// ─── Puntos / Ubicaciones (carritos) ───
+model Location {
+  id          String   @id @default(uuid())
+  name        String
+  address     String
+  latitude    Float?
+  longitude   Float?
+  notes       String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  shifts               Shift[]
+  locationAssignments  LocationAssignment[]
+
+  @@map("locations")
+}
+
+// ─── Asignación de encargados/auxiliares a puntos ───
+model LocationAssignment {
+  id              String       @id @default(uuid())
+  userId          String       @map("user_id")
+  user            User         @relation(fields: [userId], references: [id])
+  locationId      String       @map("location_id")
+  location        Location     @relation(fields: [locationId], references: [id])
+  roleAtLocation  String       @map("role_at_location")
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  @@unique([userId, locationId])
+  @@map("location_assignments")
+}
+
+// ─── Turnos ───
+model Shift {
+  id            String       @id @default(uuid())
+  locationId    String       @map("location_id")
+  location      Location     @relation(fields: [locationId], references: [id])
+  date          DateTime
+  timeSlotId    String       @map("time_slot_id")
+  timeSlot      TimeSlot     @relation(fields: [timeSlotId], references: [id])
+  maxPublishers Int          @default(2) @map("max_publishers")
+  status        String       @default("ABIERTO")
+  createdById   String       @map("created_by_id")
+  createdBy     User         @relation("ShiftCreator", fields: [createdById], references: [id])
+  notes         String?
+  createdAt     DateTime     @default(now()) @map("created_at")
+
+  assignments   ShiftAssignment[]
+
+  @@map("shifts")
+}
+
+// ─── Asignación de publicadores a turnos ───
+model ShiftAssignment {
+  id          String           @id @default(uuid())
+  shiftId     String           @map("shift_id")
+  shift       Shift            @relation(fields: [shiftId], references: [id])
+  publisherId String           @map("publisher_id")
+  publisher   Publisher        @relation(fields: [publisherId], references: [id])
+  status      String           @default("PENDIENTE")
+  assignedAt  DateTime         @default(now()) @map("assigned_at")
+  respondedAt DateTime?        @map("responded_at")
+
+  @@unique([shiftId, publisherId])
+  @@map("shift_assignments")
+}
+
+// ─── Noticias ───
+model News {
+  id          String   @id @default(uuid())
+  title       String
+  content     String
+  authorId    String   @map("author_id")
+  author      User     @relation(fields: [authorId], references: [id])
+  publishedAt DateTime @default(now()) @map("published_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("news")
+}
+
+// ─── Experiencias ───
+model Experience {
+  id          String           @id @default(uuid())
+  publisherId String           @map("publisher_id")
+  publisher   Publisher        @relation(fields: [publisherId], references: [id])
+  title       String
+  content     String
+  status      String           @default("PENDIENTE")
+  reviewedBy  String?          @map("reviewed_by")
+  reviewNotes String?          @map("review_notes")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  @@map("experiences")
+}
+
+// ─── Anuncios ───
+model Announcement {
+  id          String   @id @default(uuid())
+  title       String
+  content     String
+  authorId    String   @map("author_id")
+  author      User     @relation(fields: [authorId], references: [id])
+  publishedAt DateTime @default(now()) @map("published_at")
+  expiresAt   DateTime? @map("expires_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("announcements")
+}
+
+// ─── Device tokens (push notifications) ───
+model DeviceToken {
+  id        String   @id @default(uuid())
+  userId    String   @unique @map("user_id")
+  user      User     @relation(fields: [userId], references: [id])
+  token     String
+  platform  String   // "android" | "ios"
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("device_tokens")
+}
+
+// ─── Preferencias de notificación ───
+model NotificationPreference {
+  id           String   @id @default(uuid())
+  userId       String   @unique @map("user_id")
+  user         User     @relation(fields: [userId], references: [id])
+  pushEnabled  Boolean  @default(true) @map("push_enabled")
+  emailEnabled Boolean  @default(true) @map("email_enabled")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("notification_preferences")
+}
+
+// ─── Historial de notificaciones in-app ───
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  user      User      @relation(fields: [userId], references: [id])
+  type      String    // turno_asignado, recordatorio, turno_respuesta, experiencia_pendiente, anuncio, cambio_turno
+  title     String
+  body      String
+  data      String?   // JSON como texto: { shiftId, experienceId, etc. }
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@map("notifications")
+}
+
+// ─── Incidentes ───
+model Incident {
+  id            String    @id @default(uuid())
+  title         String
+  description   String
+  status        String    @default("ABIERTO") // ABIERTO, RESPONDIDO, CERRADO
+  reportedById  String    @map("reported_by_id")
+  reportedBy    User      @relation("IncidentReporter", fields: [reportedById], references: [id])
+  response      String?
+  respondedById String?   @map("responded_by_id")
+  respondedBy   User?     @relation("IncidentResponder", fields: [respondedById], references: [id])
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@map("incidents")
+}
