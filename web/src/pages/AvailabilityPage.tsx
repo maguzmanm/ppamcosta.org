@@ -2,11 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Save } from 'lucide-react';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import type { Publisher, TimeSlot, Availability } from '../types';
 
 const DAY_NAMES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
 export default function AvailabilityPage() {
+  const { user, role } = useAuth();
+  const isCoordinator = role === 'COORDINADOR';
   const queryClient = useQueryClient();
   const [selectedPublisher, setSelectedPublisher] = useState<string>('');
   const [availabilities, setAvailabilities] = useState<Availability[]>([]);
@@ -18,6 +21,7 @@ export default function AvailabilityPage() {
       const { data } = await api.get('/publishers');
       return data as Publisher[];
     },
+    enabled: isCoordinator,
   });
 
   const { data: timeSlots } = useQuery({
@@ -27,6 +31,13 @@ export default function AvailabilityPage() {
       return data as TimeSlot[];
     },
   });
+
+  // Si no es coordinador, cargar automáticamente su propia disponibilidad
+  useEffect(() => {
+    if (!isCoordinator && user?.publisherId) {
+      setSelectedPublisher(user.publisherId);
+    }
+  }, [isCoordinator, user?.publisherId]);
 
   const loadAvailability = useCallback(async (publisherId: string) => {
     if (!publisherId) { setAvailabilities([]); return; }
@@ -90,21 +101,29 @@ export default function AvailabilityPage() {
       <h2 className="text-2xl font-bold text-text-primary mb-6">Disponibilidad</h2>
 
       <div className="bg-surface rounded-xl border border-border p-6 mb-6">
-        <label className="block text-sm font-medium text-text-secondary mb-2">
-          Seleccionar publicador
-        </label>
-        <select
-          value={selectedPublisher}
-          onChange={(e) => setSelectedPublisher(e.target.value)}
-          className="w-full max-w-md px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
-        >
-          <option value="">-- Seleccionar --</option>
-          {(publishers || []).map((p) => (
-            <option key={p.id} value={p.id}>
-              {formatName(p)}
-            </option>
-          ))}
-        </select>
+        {isCoordinator ? (
+          <>
+            <label className="block text-sm font-medium text-text-secondary mb-2">
+              Seleccionar publicador
+            </label>
+            <select
+              value={selectedPublisher}
+              onChange={(e) => setSelectedPublisher(e.target.value)}
+              className="w-full max-w-md px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
+            >
+              <option value="">-- Seleccionar --</option>
+              {(publishers || []).map((p) => (
+                <option key={p.id} value={p.id}>
+                  {formatName(p)}
+                </option>
+              ))}
+            </select>
+          </>
+        ) : (
+          <p className="text-text-secondary text-sm">
+            Mi disponibilidad
+          </p>
+        )}
       </div>
 
       {selectedPublisher && timeSlots && timeSlots.length > 0 && (
