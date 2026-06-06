@@ -123,34 +123,7 @@ export async function create(req: Request, res: Response, next: NextFunction) {
       return newShift;
     });
 
-    // Notificar a los publicadores asignados (fuera de la transacción)
-    if (publisherIds && publisherIds.length > 0) {
-      const shiftDate = new Date(date).toLocaleDateString('es-CL', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
-
-      for (const pid of publisherIds) {
-        const pub = await prisma.publisher.findUnique({
-          where: { id: pid },
-          include: { user: true },
-        });
-        if (pub?.user) {
-          await notifyTurnoAsignado(
-            pub.user.id,
-            `${pub.firstName} ${pub.lastName}`,
-            location.name,
-            shiftDate,
-            timeSlot.name,
-            shift.id
-          );
-        }
-      }
-    }
-
-    // Retornar con asignaciones
+    // Retornar con asignaciones (enviar respuesta ANTES de notificaciones)
     const created = await prisma.shift.findUnique({
       where: { id: shift.id },
       include: {
@@ -165,6 +138,40 @@ export async function create(req: Request, res: Response, next: NextFunction) {
     });
 
     res.status(201).json(created);
+
+    // Notificar a los publicadores asignados (no bloquea la respuesta)
+    if (publisherIds && publisherIds.length > 0) {
+      const shiftDate = new Date(date).toLocaleDateString('es-CL', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+
+      // Fire-and-forget: no esperamos la respuesta
+      Promise.allSettled(
+        publisherIds.map(async (pid: string) => {
+          try {
+            const pub = await prisma.publisher.findUnique({
+              where: { id: pid },
+              include: { user: true },
+            });
+            if (pub?.user) {
+              await notifyTurnoAsignado(
+                pub.user.id,
+                `${pub.firstName} ${pub.lastName}`,
+                location.name,
+                shiftDate,
+                timeSlot.name,
+                shift.id
+              );
+            }
+          } catch (e) {
+            console.error('Error notificando asignación:', e);
+          }
+        })
+      );
+    }
   } catch (err) {
     next(err);
   }
