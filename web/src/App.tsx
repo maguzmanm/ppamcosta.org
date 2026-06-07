@@ -105,7 +105,6 @@ function AppRoutes() {
           element={<AvailabilityPage />}
         />
         <Route path="/anuncios" element={<PlaceholderPage title="Anuncios" />} />
-        <Route path="/noticias" element={<PlaceholderPage title="Noticias" />} />
         <Route
           path="/reportes"
           element={

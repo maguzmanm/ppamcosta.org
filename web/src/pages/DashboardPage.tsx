@@ -2,10 +2,17 @@ import { useQuery } from '@tanstack/react-query';
 import { Users, Calendar, FileText, MapPin } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import Badge from '../components/Badge';
 
 const COLORS = ['#00796B', '#D32F2F', '#ED6C02'];
 
+const statusBadge: Record<string, 'success' | 'warning' | 'danger' | 'default'> = {
+  ABIERTO: 'success', CERRADO: 'default', CANCELADO: 'danger',
+};
+
 export default function DashboardPage() {
+  const { user } = useAuth();
   const { data: stats, isLoading } = useQuery({
     queryKey: ['dashboard'],
     queryFn: async () => {
@@ -31,6 +38,18 @@ export default function DashboardPage() {
         ],
       };
     },
+    refetchInterval: 30000,
+  });
+
+  // Turnos asignados al publicador actual
+  const { data: myShifts, isLoading: myShiftsLoading } = useQuery({
+    queryKey: ['myShifts', user?.publisherId],
+    queryFn: async () => {
+      if (!user?.publisherId) return [];
+      const { data } = await api.get('/shifts', { params: { publisherId: user.publisherId } });
+      return data as any[];
+    },
+    enabled: !!user?.publisherId,
     refetchInterval: 30000,
   });
 
@@ -60,6 +79,45 @@ export default function DashboardPage() {
                 <p className={`text-3xl font-bold ${card.color}`}>{card.value}</p>
               </div>
             ))}
+          </div>
+
+          {/* Mis turnos asignados */}
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-text-primary mb-4">Mis turnos</h3>
+            {myShiftsLoading ? (
+              <p className="text-text-muted">Cargando turnos...</p>
+            ) : !myShifts?.length ? (
+              <p className="text-text-muted bg-surface rounded-xl p-6 border border-border text-center">
+                No tienes turnos asignados
+              </p>
+            ) : (
+              <div className="bg-surface rounded-xl border border-border overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-background">
+                      <th className="text-left px-4 py-3 text-text-muted font-medium">Fecha</th>
+                      <th className="text-left px-4 py-3 text-text-muted font-medium">Horario</th>
+                      <th className="text-left px-4 py-3 text-text-muted font-medium hidden sm:table-cell">Punto</th>
+                      <th className="text-left px-4 py-3 text-text-muted font-medium">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {myShifts.map((s: any) => (
+                      <tr key={s.id} className="border-b border-border last:border-0 hover:bg-background/50">
+                        <td className="px-4 py-3 text-text-primary">
+                          {new Date(s.date).toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', month: 'short' })}
+                        </td>
+                        <td className="px-4 py-3 text-text-primary">{s.timeSlot?.name}</td>
+                        <td className="px-4 py-3 text-text-secondary hidden sm:table-cell">{s.location?.name}</td>
+                        <td className="px-4 py-3">
+                          <Badge variant={statusBadge[s.status] || 'default'}>{s.status}</Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

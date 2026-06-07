@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { Menu, Sun, Moon, LogOut, LayoutDashboard, GitBranch, Building2, Users, MapPin, Calendar, Clock, FileText, Megaphone, Newspaper, BarChart3, Settings } from 'lucide-react';
+import { Menu, Sun, Moon, LogOut, LayoutDashboard, GitBranch, Building2, Users, MapPin, Calendar, Clock, FileText, Megaphone, BarChart3, Settings } from 'lucide-react';
 import type { UserRole } from '../types';
 
 interface NavItem {
@@ -22,7 +22,6 @@ const navItems: NavItem[] = [
   { to: '/disponibilidad', label: 'Disponibilidad', icon: <Clock size={20} />, roles: ['COORDINADOR', 'AUXILIAR', 'ENCARGADO_PUNTO', 'AUXILIAR_PUNTO', 'ENCARGADO_EXPERIENCIAS', 'PUBLICADOR'] },
   { to: '/experiencias', label: 'Experiencias', icon: <FileText size={20} />, roles: ['COORDINADOR', 'AUXILIAR', 'ENCARGADO_PUNTO', 'AUXILIAR_PUNTO', 'ENCARGADO_EXPERIENCIAS', 'PUBLICADOR'] },
   { to: '/anuncios', label: 'Anuncios', icon: <Megaphone size={20} />, roles: ['COORDINADOR', 'AUXILIAR', 'ENCARGADO_PUNTO', 'AUXILIAR_PUNTO', 'ENCARGADO_EXPERIENCIAS', 'PUBLICADOR'] },
-  { to: '/noticias', label: 'Noticias', icon: <Newspaper size={20} />, roles: ['COORDINADOR', 'AUXILIAR', 'ENCARGADO_PUNTO', 'AUXILIAR_PUNTO', 'ENCARGADO_EXPERIENCIAS', 'PUBLICADOR'] },
   { to: '/reportes', label: 'Reportes', icon: <BarChart3 size={20} />, roles: ['COORDINADOR'] },
 ];
 

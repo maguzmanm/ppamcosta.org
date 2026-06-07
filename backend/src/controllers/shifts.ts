@@ -11,12 +11,15 @@ import {
 
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
-    const { locationId, date, status } = req.query;
+    const { locationId, date, status, publisherId } = req.query;
     const where: Record<string, unknown> = {};
 
     if (locationId) where.locationId = String(locationId);
     if (date) where.date = new Date(String(date));
     if (status) where.status = String(status);
+    if (publisherId) {
+      where.assignments = { some: { publisherId: String(publisherId) } };
+    }
 
     const shifts = await prisma.shift.findMany({
       where,

@@ -17,7 +17,6 @@ async function main() {
   await prisma.incident.deleteMany();
   await prisma.experience.deleteMany();
   await prisma.announcement.deleteMany();
-  await prisma.news.deleteMany();
   await prisma.user.deleteMany();
   await prisma.publisher.deleteMany();
   await prisma.congregation.deleteMany();
@@ -133,16 +132,6 @@ async function main() {
     await prisma.availability.create({ data: { publisherId: publishers[3].id, timeSlotId: timeSlots[0].id, dayOfWeek: day } });
   }
   console.log('✅ Disponibilidades de ejemplo creadas');
-
-  // ─── Noticia de ejemplo ───
-  await prisma.news.create({
-    data: {
-      title: '¡Bienvenidos al sistema PPAM!',
-      content: 'Este sistema te permite gestionar la predicación pública especial en áreas metropolitanas. Coordina turnos, comparte experiencias y mantente al tanto de los anuncios.',
-      authorId: users[0].id,
-    },
-  });
-  console.log('✅ Noticia de ejemplo creada');
 
   // ─── Experiencias de ejemplo ───
   // Aprobada

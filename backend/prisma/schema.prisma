@@ -87,8 +87,7 @@ model User {
   createdShifts   Shift[]           @relation("ShiftCreator")
   // Puntos donde es encargado/auxiliar
   locationAssignments LocationAssignment[]
-  // Noticias/experiencias creadas
-  news            News[]
+  // Experiencias creadas
   announcements   Announcement[]
   // Notificaciones
   deviceToken     DeviceToken?
@@ -179,19 +178,6 @@ model ShiftAssignment {
 
   @@unique([shiftId, publisherId])
   @@map("shift_assignments")
-}
-
-// ─── Noticias ───
-model News {
-  id          String   @id @default(uuid())
-  title       String
-  content     String
-  authorId    String   @map("author_id")
-  author      User     @relation(fields: [authorId], references: [id])
-  publishedAt DateTime @default(now()) @map("published_at")
-  createdAt   DateTime @default(now()) @map("created_at")
-
-  @@map("news")
 }
 
 // ─── Experiencias ───
