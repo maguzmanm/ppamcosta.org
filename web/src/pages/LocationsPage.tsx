@@ -19,11 +19,15 @@ export default function LocationsPage() {
 
   const saveMutation = useMutation({
     mutationFn: (payload: any) => {
-      const body = { ...payload, latitude: parseFloat(payload.latitude) || null, longitude: parseFloat(payload.longitude) || null };
-      if (payload.id) return api.put(`/locations/${payload.id}`, body);
+      const body = { ...payload };
+      delete body.id;
+      body.latitude = parseFloat(payload.latitude) || null;
+      body.longitude = parseFloat(payload.longitude) || null;
+      if (editing?.id) return api.put(`/locations/${editing.id}`, body);
       return api.post('/locations', body);
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['locations'] }); setModalOpen(false); resetForm(); },
+    onError: (err: any) => { alert(err?.response?.data?.error || 'Error al guardar el punto'); },
   });
 
   const deleteMutation = useMutation({
