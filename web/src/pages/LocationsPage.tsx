@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2, Map } from 'lucide-react';
+import { Plus, Pencil, Trash2, Map, ExternalLink } from 'lucide-react';
 import api from '../services/api';
 import DataTable from '../components/DataTable';
 import Modal from '../components/Modal';
@@ -57,7 +57,16 @@ export default function LocationsPage() {
               <span>{l.name}</span>
             </div>
           )},
-          { key: 'address', header: 'Dirección', hideOnMobile: true },
+          { key: 'address', header: 'Dirección', hideOnMobile: true, render: (l) => (
+            <div className="flex items-center gap-1.5">
+              <span className="text-text-secondary">{l.address}</span>
+              <a href={mapsUrl(l)} target="_blank" rel="noopener noreferrer"
+                 className="text-text-muted hover:text-primary transition-colors inline-flex"
+                 title="Ver en Google Maps">
+                <ExternalLink size={14} />
+              </a>
+            </div>
+          )},
           { key: 'status', header: 'Estado', render: (l) => l.isActive ? <span className="text-success text-xs font-medium">Activo</span> : <span className="text-text-muted text-xs">Inactivo</span> },
           { key: 'actions', header: '', className: 'w-24',
             render: (l) => (
@@ -111,3 +120,9 @@ export default function LocationsPage() {
 }
 
 function MapPin(props: any) { return <Map {...props} />; }
+
+function mapsUrl(l: Location): string {
+  if (l.latitude && l.longitude) return `https://www.google.com/maps?q=${l.latitude},${l.longitude}`;
+  if (l.address) return `https://www.google.com/maps?q=${encodeURIComponent(l.address)}`;
+  return '#';
+}
