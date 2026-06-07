@@ -228,6 +228,7 @@ export default function PublishersPage() {
           { key: 'phone', header: 'Teléfono', hideOnMobile: true, render: (p) => formatPhone(p.phone) },
           { key: 'role', header: 'Rol', render: (p) => roleBadge(p.user?.role) },
           { key: 'congregation', header: 'Congregación', hideOnMobile: true, render: (p) => p.congregation?.name || '-' },
+          { key: 'location', header: 'Punto asignado', hideOnMobile: true, render: (p) => (p as any).location?.name || '-' },
           {
             key: 'actions',
             header: '',
