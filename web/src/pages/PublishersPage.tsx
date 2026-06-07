@@ -62,6 +62,7 @@ export default function PublishersPage() {
     phone: '',
     gender: '',
     congregationId: '',
+    locationId: '',
     role: 'PUBLICADOR' as UserRole,
     password: '',
     isActive: true,
@@ -83,6 +84,14 @@ export default function PublishersPage() {
     queryFn: async () => {
       const { data } = await api.get('/congregations');
       return data as Congregation[];
+    },
+  });
+
+  const { data: locations } = useQuery({
+    queryKey: ['locations'],
+    queryFn: async () => {
+      const { data } = await api.get('/locations');
+      return data as any[];
     },
   });
 
@@ -115,6 +124,7 @@ export default function PublishersPage() {
       phone: '',
       gender: '',
       congregationId: '',
+      locationId: '',
       role: 'PUBLICADOR',
       password: '',
       isActive: true,
@@ -149,6 +159,7 @@ export default function PublishersPage() {
       phone: p.phone || '',
       gender: p.gender || '',
       congregationId: p.congregationId,
+      locationId: (p as any).locationId || '',
       role: (p.user?.role as UserRole) || 'PUBLICADOR',
       password: '',
       isActive: p.isActive,
@@ -289,6 +300,14 @@ export default function PublishersPage() {
               className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm">
               <option value="">Seleccionar</option>
               {(congregations || []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-1">Punto asignado</label>
+            <select value={form.locationId} onChange={(e) => setForm({ ...form, locationId: e.target.value })}
+              className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm">
+              <option value="">Ninguno</option>
+              {(locations || []).map((l: any) => <option key={l.id} value={l.id}>{l.name}</option>)}
             </select>
           </div>
           <div>

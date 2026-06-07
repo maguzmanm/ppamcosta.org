@@ -56,6 +56,8 @@ model Publisher {
   // displayName: si marriedLastName existe → "firstName de marriedLastName"
   congregationId String         @map("congregation_id")
   congregation   Congregation   @relation(fields: [congregationId], references: [id])
+  locationId     String?        @map("location_id")
+  location       Location?      @relation(fields: [locationId], references: [id])
   phone          String?
   email          String?
   isActive       Boolean        @default(true) @map("is_active")
@@ -127,6 +129,7 @@ model Location {
 
   shifts               Shift[]
   locationAssignments  LocationAssignment[]
+  publishers           Publisher[]
 
   @@map("locations")
 }

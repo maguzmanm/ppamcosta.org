@@ -54,7 +54,7 @@ export async function getById(req: Request, res: Response, next: NextFunction) {
 
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
-    const { firstName, lastName, marriedLastName, designations, gender, congregationId, phone, email, notes, password, role } = req.body;
+    const { firstName, lastName, marriedLastName, designations, gender, congregationId, locationId, phone, email, notes, password, role } = req.body;
     if (!firstName || !lastName || !congregationId) {
       throw new ValidationError('Nombre, apellido y congregación son requeridos');
     }
@@ -62,8 +62,13 @@ export async function create(req: Request, res: Response, next: NextFunction) {
     const congregation = await prisma.congregation.findUnique({ where: { id: congregationId } });
     if (!congregation) throw new NotFoundError('Congregación no encontrada');
 
+    if (locationId) {
+      const loc = await prisma.location.findUnique({ where: { id: locationId } });
+      if (!loc) throw new NotFoundError('Punto no encontrado');
+    }
+
     const publisher = await prisma.publisher.create({
-      data: { firstName, lastName, marriedLastName: marriedLastName || null, designations: designations || null, gender: gender || null, congregationId, phone, email, notes },
+      data: { firstName, lastName, marriedLastName: marriedLastName || null, designations: designations || null, gender: gender || null, congregationId, locationId: locationId || null, phone, email, notes },
       include: { congregation: { include: { circuit: true } } },
     });
 
@@ -89,7 +94,12 @@ export async function create(req: Request, res: Response, next: NextFunction) {
 
 export async function update(req: Request, res: Response, next: NextFunction) {
   try {
-    const { firstName, lastName, marriedLastName, designations, gender, congregationId, phone, email, notes, isActive, role, password } = req.body;
+    const { firstName, lastName, marriedLastName, designations, gender, congregationId, locationId, phone, email, notes, isActive, role, password } = req.body;
+
+    if (locationId) {
+      const loc = await prisma.location.findUnique({ where: { id: locationId } });
+      if (!loc) throw new NotFoundError('Punto no encontrado');
+    }
 
     const publisher = await prisma.publisher.update({
       where: { id: req.params.id },
@@ -98,7 +108,7 @@ export async function update(req: Request, res: Response, next: NextFunction) {
         marriedLastName: marriedLastName !== undefined ? (marriedLastName || null) : undefined,
         designations: designations !== undefined ? (designations || null) : undefined,
         gender: gender !== undefined ? (gender || null) : undefined,
-        congregationId, phone, email, notes, isActive,
+        congregationId, locationId: locationId !== undefined ? (locationId || null) : undefined, phone, email, notes, isActive,
       },
       include: { congregation: { include: { circuit: true } }, user: { select: { id: true, email: true, role: true } } },
     });
