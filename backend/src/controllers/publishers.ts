@@ -24,6 +24,7 @@ export async function list(req: Request, res: Response, next: NextFunction) {
       where,
       include: {
         congregation: { include: { circuit: true } },
+        location: { select: { id: true, name: true } },
         user: { select: { id: true, email: true, role: true } },
         _count: { select: { availabilities: true } },
       },
@@ -41,6 +42,7 @@ export async function getById(req: Request, res: Response, next: NextFunction) {
       where: { id: req.params.id },
       include: {
         congregation: { include: { circuit: true } },
+        location: { select: { id: true, name: true } },
         availabilities: { include: { timeSlot: true } },
         user: { select: { id: true, email: true, role: true } },
       },
