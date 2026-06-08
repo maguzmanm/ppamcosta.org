@@ -9,22 +9,22 @@ import {
   registerDevice,
   unregisterDevice,
 } from '../controllers/notifications';
-import { authenticate } from '../middleware/auth';
+import { authenticate, requireRole } from '../middleware/auth';
 
 export const notificationRouter = Router();
 
 notificationRouter.use(authenticate);
 
-// Historial
+// Historial (COORDINADOR y AUXILIAR pueden ver)
 notificationRouter.get('/', list);
 notificationRouter.get('/unread-count', unreadCount);
 notificationRouter.put('/:id/read', markAsRead);
 notificationRouter.put('/read-all', markAllAsRead);
 
-// Preferencias
+// Preferencias: ver cualquiera, modificar solo COORDINADOR
 notificationRouter.get('/preferences', getPreferences);
-notificationRouter.put('/preferences', updatePreferences);
+notificationRouter.put('/preferences', requireRole(['COORDINADOR']), updatePreferences);
 
-// Device token (push)
+// Device token (push) - cualquier usuario
 notificationRouter.post('/device', registerDevice);
 notificationRouter.delete('/device', unregisterDevice);

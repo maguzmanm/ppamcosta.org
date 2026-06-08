@@ -1,8 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Bell, Smartphone, Mail, RefreshCw } from 'lucide-react';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 export default function NotificationsPage() {
+  const { user } = useAuth();
+  const isCoordinator = user?.role === 'COORDINADOR';
   const queryClient = useQueryClient();
 
   // Suscripciones push activas
@@ -50,24 +53,29 @@ export default function NotificationsPage() {
       <div className="mb-8 bg-surface rounded-xl border border-border p-6">
         <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
           <Bell size={20} className="text-primary" /> Mis preferencias
+          {!isCoordinator && (
+            <span className="text-xs text-text-muted font-normal">(solo lectura)</span>
+          )}
         </h3>
         <div className="flex flex-wrap gap-6">
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label className={`flex items-center gap-2 ${isCoordinator ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'}`}>
             <input
               type="checkbox"
               checked={preferences?.pushEnabled ?? true}
               onChange={(e) => prefMutation.mutate({ pushEnabled: e.target.checked })}
-              className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+              disabled={!isCoordinator}
+              className="w-4 h-4 rounded border-border text-primary focus:ring-primary disabled:opacity-50"
             />
             <Smartphone size={18} className="text-text-secondary" />
             <span className="text-sm text-text-primary">Push</span>
           </label>
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label className={`flex items-center gap-2 ${isCoordinator ? 'cursor-pointer' : 'cursor-not-allowed opacity-70'}`}>
             <input
               type="checkbox"
               checked={preferences?.emailEnabled ?? true}
               onChange={(e) => prefMutation.mutate({ emailEnabled: e.target.checked })}
-              className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+              disabled={!isCoordinator}
+              className="w-4 h-4 rounded border-border text-primary focus:ring-primary disabled:opacity-50"
             />
             <Mail size={18} className="text-text-secondary" />
             <span className="text-sm text-text-primary">Email</span>
