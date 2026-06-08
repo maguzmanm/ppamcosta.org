@@ -22,7 +22,7 @@ const navItems: NavItem[] = [
   { to: '/disponibilidad', label: 'Disponibilidad', icon: <Clock size={20} />, roles: ['COORDINADOR', 'AUXILIAR', 'ENCARGADO_PUNTO', 'AUXILIAR_PUNTO', 'ENCARGADO_EXPERIENCIAS', 'PUBLICADOR'] },
   { to: '/experiencias', label: 'Experiencias', icon: <FileText size={20} />, roles: ['COORDINADOR', 'AUXILIAR', 'ENCARGADO_PUNTO', 'AUXILIAR_PUNTO', 'ENCARGADO_EXPERIENCIAS', 'PUBLICADOR'] },
   { to: '/anuncios', label: 'Anuncios', icon: <Megaphone size={20} />, roles: ['COORDINADOR', 'AUXILIAR', 'ENCARGADO_PUNTO', 'AUXILIAR_PUNTO', 'ENCARGADO_EXPERIENCIAS', 'PUBLICADOR'] },
-  { to: '/notificaciones', label: 'Notificaciones', icon: <Bell size={20} />, roles: ['COORDINADOR', 'AUXILIAR'] },
+  { to: '/notificaciones', label: 'Notificaciones', icon: <Bell size={20} />, roles: ['COORDINADOR', 'AUXILIAR', 'ENCARGADO_PUNTO', 'AUXILIAR_PUNTO', 'ENCARGADO_EXPERIENCIAS', 'PUBLICADOR'] },
   { to: '/reportes', label: 'Reportes', icon: <BarChart3 size={20} />, roles: ['COORDINADOR'] },
 ];
 

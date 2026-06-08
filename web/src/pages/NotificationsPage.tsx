@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Bell, Smartphone, Mail, RefreshCw } from 'lucide-react';
+import { Bell, Smartphone, Mail, RefreshCw, CheckCheck, Check } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 export default function NotificationsPage() {
   const { user } = useAuth();
   const isCoordinator = user?.role === 'COORDINADOR';
+  const isAdmin = user?.role === 'COORDINADOR' || user?.role === 'AUXILIAR';
   const queryClient = useQueryClient();
 
   // Suscripciones push activas
@@ -45,6 +46,20 @@ export default function NotificationsPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notification-preferences'] }),
   });
 
+  // Marcar una como leída
+  const markReadMutation = useMutation({
+    mutationFn: (id: string) => api.put(`/notifications/${id}/read`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications-admin'] }),
+  });
+
+  // Marcar todas como leídas
+  const markAllReadMutation = useMutation({
+    mutationFn: () => api.put('/notifications/read-all'),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications-admin'] }),
+  });
+
+  const unreadCount = notifications?.filter((n: any) => !n.readAt).length || 0;
+
   return (
     <div>
       <h2 className="text-2xl font-bold text-text-primary mb-6">Notificaciones</h2>
@@ -83,7 +98,8 @@ export default function NotificationsPage() {
         </div>
       </div>
 
-      {/* Suscripciones Push activas */}
+      {/* Suscripciones Push activas (solo admin) */}
+      {isAdmin && (
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-text-primary flex items-center gap-2">
@@ -142,16 +158,41 @@ export default function NotificationsPage() {
           </div>
         )}
       </div>
+      )}
 
       {/* Historial reciente */}
       <div className="mb-8">
-        <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
-          <Bell size={20} className="text-warning" />
-          Historial reciente
-          <span className="text-sm font-normal text-text-muted">
-            ({notifications?.length || 0})
-          </span>
-        </h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-text-primary flex items-center gap-2">
+            <Bell size={20} className="text-warning" />
+            Historial reciente
+            <span className="text-sm font-normal text-text-muted">
+              ({notifications?.length || 0})
+            </span>
+            {unreadCount > 0 && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-warning/10 text-warning font-medium">
+                {unreadCount} sin leer
+              </span>
+            )}
+          </h3>
+          <div className="flex items-center gap-2">
+            {unreadCount > 0 && (
+              <button
+                onClick={() => markAllReadMutation.mutate()}
+                disabled={markAllReadMutation.isPending}
+                className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors disabled:opacity-50"
+              >
+                <CheckCheck size={14} /> Marcar todas leídas
+              </button>
+            )}
+            <button
+              onClick={() => queryClient.invalidateQueries({ queryKey: ['notifications-admin'] })}
+              className="p-2 rounded-lg hover:bg-surface-hover text-text-muted"
+            >
+              <RefreshCw size={16} />
+            </button>
+          </div>
+        </div>
         {!notifications?.length ? (
           <p className="text-text-muted bg-surface rounded-xl p-6 border border-border text-center text-sm">
             Sin notificaciones
@@ -164,7 +205,7 @@ export default function NotificationsPage() {
                   <th className="text-left px-4 py-3 text-text-muted font-medium">Título</th>
                   <th className="text-left px-4 py-3 text-text-muted font-medium hidden sm:table-cell">Tipo</th>
                   <th className="text-left px-4 py-3 text-text-muted font-medium hidden md:table-cell">Fecha</th>
-                  <th className="text-left px-4 py-3 text-text-muted font-medium">Leída</th>
+                  <th className="text-left px-4 py-3 text-text-muted font-medium w-24">Acción</th>
                 </tr>
               </thead>
               <tbody>
@@ -182,9 +223,17 @@ export default function NotificationsPage() {
                     </td>
                     <td className="px-4 py-3">
                       {n.readAt ? (
-                        <span className="text-xs text-success">✓ {new Date(n.readAt).toLocaleDateString('es-CL')}</span>
+                        <span className="text-xs text-success flex items-center gap-1">
+                          <Check size={12} /> {new Date(n.readAt).toLocaleDateString('es-CL')}
+                        </span>
                       ) : (
-                        <span className="text-xs text-warning font-medium">● Sin leer</span>
+                        <button
+                          onClick={() => markReadMutation.mutate(n.id)}
+                          disabled={markReadMutation.isPending}
+                          className="text-xs text-warning hover:text-primary font-medium transition-colors disabled:opacity-50"
+                        >
+                          ● Marcar leída
+                        </button>
                       )}
                     </td>
                   </tr>
