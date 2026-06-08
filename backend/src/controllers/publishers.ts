@@ -7,11 +7,12 @@ import { NotFoundError, ValidationError } from '../utils/errors';
 
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
-    const { congregationId, isActive, search } = req.query;
+    const { congregationId, isActive, search, role } = req.query;
     const where: Record<string, unknown> = {};
 
     if (congregationId) where.congregationId = String(congregationId);
     if (isActive !== undefined) where.isActive = isActive === 'true';
+    if (role) where.user = { role: String(role) };
     if (search) {
       const s = String(search);
       where.OR = [

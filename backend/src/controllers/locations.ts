@@ -45,7 +45,7 @@ export async function getById(req: Request, res: Response, next: NextFunction) {
 
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
-    const { name, address, latitude, longitude, notes } = req.body;
+    const { name, address, latitude, longitude, notes, encargadoId, auxiliarIds } = req.body;
     if (!name || !address) throw new ValidationError('Nombre y dirección son requeridos');
 
     const parseCoord = (val: unknown): number | null => {
@@ -63,7 +63,20 @@ export async function create(req: Request, res: Response, next: NextFunction) {
         notes,
       },
     });
-    res.status(201).json(location);
+
+    // Asignar encargado y auxiliares
+    await syncLocationAssignments(location.id, encargadoId, auxiliarIds || []);
+
+    const created = await prisma.location.findUnique({
+      where: { id: location.id },
+      include: {
+        locationAssignments: {
+          include: { user: { include: { publisher: { select: { firstName: true, lastName: true } } } } },
+        },
+      },
+    });
+
+    res.status(201).json(created);
   } catch (err) {
     next(err);
   }
@@ -71,16 +84,15 @@ export async function create(req: Request, res: Response, next: NextFunction) {
 
 export async function update(req: Request, res: Response, next: NextFunction) {
   try {
-    const { name, address, latitude, longitude, notes, isActive } = req.body;
+    const { name, address, latitude, longitude, notes, isActive, encargadoId, auxiliarIds } = req.body;
 
-    // Convertir strings vacíos a null para coordenadas
     const parseCoord = (val: unknown): number | null => {
       if (val === '' || val === null || val === undefined) return null;
       const num = Number(val);
       return isNaN(num) ? null : num;
     };
 
-    const location = await prisma.location.update({
+    await prisma.location.update({
       where: { id: req.params.id },
       data: {
         ...(name !== undefined && { name }),
@@ -91,9 +103,46 @@ export async function update(req: Request, res: Response, next: NextFunction) {
         longitude: parseCoord(longitude),
       },
     });
+
+    // Actualizar asignaciones si se enviaron
+    if (encargadoId !== undefined || auxiliarIds !== undefined) {
+      await syncLocationAssignments(req.params.id, encargadoId, auxiliarIds || []);
+    }
+
+    const location = await prisma.location.findUnique({
+      where: { id: req.params.id },
+      include: {
+        locationAssignments: {
+          include: { user: { include: { publisher: { select: { firstName: true, lastName: true } } } } },
+        },
+      },
+    });
+
     res.json(location);
   } catch (err) {
     next(err);
+  }
+}
+
+// Helper: sincroniza las asignaciones de un punto
+async function syncLocationAssignments(locationId: string, encargadoId?: string | null, auxiliarIds: string[] = []) {
+  // Eliminar asignaciones existentes
+  await prisma.locationAssignment.deleteMany({ where: { locationId } });
+
+  const toCreate: { userId: string; locationId: string; roleAtLocation: string }[] = [];
+
+  if (encargadoId) {
+    toCreate.push({ userId: encargadoId, locationId, roleAtLocation: 'ENCARGADO' });
+  }
+
+  for (const userId of auxiliarIds) {
+    if (userId && userId !== encargadoId) {
+      toCreate.push({ userId, locationId, roleAtLocation: 'AUXILIAR' });
+    }
+  }
+
+  if (toCreate.length > 0) {
+    await prisma.locationAssignment.createMany({ data: toCreate });
   }
 }
 

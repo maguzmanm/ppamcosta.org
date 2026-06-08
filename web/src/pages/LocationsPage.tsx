@@ -10,11 +10,32 @@ export default function LocationsPage() {
   const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Location | null>(null);
-  const [form, setForm] = useState({ name: '', address: '', latitude: '', longitude: '', notes: '', isActive: true });
+  const [form, setForm] = useState({
+    name: '', address: '', latitude: '', longitude: '', notes: '', isActive: true,
+    encargadoId: '', auxiliarIds: [] as string[],
+  });
 
   const { data: locations, isLoading } = useQuery({
     queryKey: ['locations'],
     queryFn: async () => { const { data } = await api.get('/locations'); return data as Location[]; },
+  });
+
+  // Publicadores con rol ENCARGADO_PUNTO
+  const { data: encargados } = useQuery({
+    queryKey: ['publishers-encargados'],
+    queryFn: async () => {
+      const { data } = await api.get('/publishers', { params: { role: 'ENCARGADO_PUNTO' } });
+      return data as any[];
+    },
+  });
+
+  // Publicadores con rol AUXILIAR_PUNTO
+  const { data: auxiliares } = useQuery({
+    queryKey: ['publishers-auxiliares'],
+    queryFn: async () => {
+      const { data } = await api.get('/publishers', { params: { role: 'AUXILIAR_PUNTO' } });
+      return data as any[];
+    },
   });
 
   const saveMutation = useMutation({
@@ -35,12 +56,21 @@ export default function LocationsPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['locations'] }),
   });
 
-  function resetForm() { setEditing(null); setForm({ name: '', address: '', latitude: '', longitude: '', notes: '', isActive: true }); }
+  function resetForm() { setEditing(null); setForm({ name: '', address: '', latitude: '', longitude: '', notes: '', isActive: true, encargadoId: '', auxiliarIds: [] }); }
 
   function openCreate() { resetForm(); setModalOpen(true); }
   function openEdit(l: Location) {
     setEditing(l);
-    setForm({ name: l.name, address: l.address, latitude: l.latitude?.toString() || '', longitude: l.longitude?.toString() || '', notes: l.notes || '', isActive: l.isActive });
+    const assignments = (l as any).locationAssignments || [];
+    const encargado = assignments.find((a: any) => a.roleAtLocation === 'ENCARGADO');
+    const auxs = assignments.filter((a: any) => a.roleAtLocation === 'AUXILIAR').map((a: any) => a.userId);
+    setForm({
+      name: l.name, address: l.address,
+      latitude: l.latitude?.toString() || '', longitude: l.longitude?.toString() || '',
+      notes: l.notes || '', isActive: l.isActive,
+      encargadoId: encargado?.userId || '',
+      auxiliarIds: auxs,
+    });
     setModalOpen(true);
   }
 
@@ -113,6 +143,45 @@ export default function LocationsPage() {
           <label className="block text-sm font-medium text-text-secondary mb-1">Notas</label>
           <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2}
             className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-1">Encargado de punto</label>
+            <select value={form.encargadoId} onChange={(e) => setForm({ ...form, encargadoId: e.target.value })}
+              className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm">
+              <option value="">Seleccionar</option>
+              {(encargados || []).map((p: any) => (
+                <option key={p.id} value={p.user?.id || ''}>{p.firstName} {p.lastName}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-1">Auxiliares de punto</label>
+            <div className="max-h-32 overflow-y-auto border border-border rounded-lg p-2 space-y-1">
+              {(auxiliares || []).map((p: any) => (
+                <label key={p.id} className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.auxiliarIds.includes(p.user?.id || '')}
+                    onChange={(e) => {
+                      const uid = p.user?.id || '';
+                      setForm({
+                        ...form,
+                        auxiliarIds: e.target.checked
+                          ? [...form.auxiliarIds, uid]
+                          : form.auxiliarIds.filter((id) => id !== uid),
+                      });
+                    }}
+                    className="rounded border-border"
+                  />
+                  {p.firstName} {p.lastName}
+                </label>
+              ))}
+              {(!auxiliares || auxiliares.length === 0) && (
+                <p className="text-xs text-text-muted py-1">No hay auxiliares disponibles</p>
+              )}
+            </div>
+          </div>
         </div>
         <label className="flex items-center gap-2 text-sm text-text-secondary">
           <input type="checkbox" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} className="rounded border-border" />
