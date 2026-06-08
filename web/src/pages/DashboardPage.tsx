@@ -181,22 +181,6 @@ export default function DashboardPage() {
             )}
           </div>
 
-          <div className="bg-surface rounded-xl p-6 border border-border">
-            <h3 className="text-lg font-semibold text-text-primary mb-4">Resumen de actividad</h3>
-            <div className="space-y-4">
-                {[
-                  { label: 'Publicadores activos', value: stats?.totalPublishers ?? 0, color: 'text-primary' },
-                  { label: 'Turnos abiertos', value: stats?.activeShifts ?? 0, color: 'text-success' },
-                  { label: 'Experiencias por revisar', value: stats?.pendingExperiences ?? 0, color: 'text-warning' },
-                  { label: 'Puntos de predicación', value: stats?.totalLocations ?? 0, color: 'text-info' },
-                ].map((item) => (
-                  <div key={item.label} className="flex items-center justify-between p-3 rounded-lg bg-background">
-                    <span className="text-text-secondary">{item.label}</span>
-                    <span className={`font-semibold ${item.color}`}>{item.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
         </>
       )}
     </div>
