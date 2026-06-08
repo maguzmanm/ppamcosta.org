@@ -13,6 +13,7 @@ import ShiftsPage from './pages/ShiftsPage';
 import ExperiencesPage from './pages/ExperiencesPage';
 import AvailabilityPage from './pages/AvailabilityPage';
 import ProfilePage from './pages/ProfilePage';
+import AnnouncementsPage from './pages/AnnouncementsPage';
 import PlaceholderPage from './components/PlaceholderPage';
 import type { UserRole } from './types';
 
@@ -104,7 +105,7 @@ function AppRoutes() {
           path="/disponibilidad"
           element={<AvailabilityPage />}
         />
-        <Route path="/anuncios" element={<PlaceholderPage title="Anuncios" />} />
+        <Route path="/anuncios" element={<AnnouncementsPage />} />
         <Route
           path="/reportes"
           element={
