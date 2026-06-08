@@ -183,11 +183,11 @@ export default function PublishersPage() {
   }
 
   const roleBadge = (role?: string) => {
-    const map: Record<string, 'success' | 'warning' | 'info' | 'default'> = {
+    const map: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'secondary' | 'default'> = {
       COORDINADOR: 'info',
-      AUXILIAR: 'default',
+      AUXILIAR: 'secondary',
       ENCARGADO_PUNTO: 'warning',
-      AUXILIAR_PUNTO: 'default',
+      AUXILIAR_PUNTO: 'danger',
       ENCARGADO_EXPERIENCIAS: 'success',
       PUBLICADOR: 'default',
     };
