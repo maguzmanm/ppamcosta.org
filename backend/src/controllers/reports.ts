@@ -16,10 +16,12 @@ function sendExcel(res: Response, data: any[], sheetName: string, fileName: stri
 // ─── Publicadores ───
 export async function publishersReport(req: Request, res: Response, next: NextFunction) {
   try {
-    const { congregationId, role, isActive } = req.query;
+    const { congregationId, locationId, role, isActive, gender } = req.query;
     const where: any = {};
     if (congregationId) where.congregationId = String(congregationId);
+    if (locationId) where.locationId = String(locationId);
     if (isActive !== undefined) where.isActive = isActive === 'true';
+    if (gender) where.gender = String(gender);
     if (role) where.user = { role: String(role) };
 
     const publishers = await prisma.publisher.findMany({
@@ -36,6 +38,7 @@ export async function publishersReport(req: Request, res: Response, next: NextFu
       Nombre: p.marriedLastName ? `${p.firstName} de ${p.marriedLastName}` : `${p.firstName} ${p.lastName}`,
       Email: p.email || '',
       Teléfono: p.phone || '',
+      Género: p.gender === 'M' ? 'Masculino' : p.gender === 'F' ? 'Femenino' : '',
       Congregación: p.congregation?.name || '',
       'Punto asignado': p.location?.name || '',
       Rol: p.user?.role?.replace(/_/g, ' ') || '',
@@ -50,9 +53,12 @@ export async function publishersReport(req: Request, res: Response, next: NextFu
 // ─── Turnos ───
 export async function shiftsReport(req: Request, res: Response, next: NextFunction) {
   try {
-    const { locationId, date, status } = req.query;
+    const { locationId, date, status, timeSlotId } = req.query;
     const where: any = {};
     if (locationId) where.locationId = String(locationId);
+    if (date) where.date = new Date(String(date));
+    if (status) where.status = String(status);
+    if (timeSlotId) where.timeSlotId = String(timeSlotId);
     if (date) where.date = new Date(String(date));
     if (status) where.status = String(status);
 

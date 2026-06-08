@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Download } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Download, Filter } from 'lucide-react';
 import api from '../services/api';
 
 const REPORT_TYPES = [
@@ -13,6 +14,24 @@ export default function ReportsPage() {
   const [type, setType] = useState('publishers');
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+
+  // Datos para filtros
+  const { data: congregations } = useQuery({
+    queryKey: ['congregations'],
+    queryFn: async () => { const { data } = await api.get('/congregations'); return data as any[]; },
+  });
+  const { data: locations } = useQuery({
+    queryKey: ['locations'],
+    queryFn: async () => { const { data } = await api.get('/locations'); return data as any[]; },
+  });
+  const { data: timeslots } = useQuery({
+    queryKey: ['timeslots'],
+    queryFn: async () => { const { data } = await api.get('/timeslots'); return data as any[]; },
+  });
+  const { data: allPublishers } = useQuery({
+    queryKey: ['allPublishers'],
+    queryFn: async () => { const { data } = await api.get('/publishers'); return data as any[]; },
+  });
 
   function setFilter(key: string, value: string) {
     setFilters((prev) => {
@@ -77,9 +96,25 @@ export default function ReportsPage() {
         </div>
 
         {/* Filtros dinámicos según tipo */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           {type === 'publishers' && (
             <>
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1">Congregación</label>
+                <select value={filters.congregationId || ''} onChange={(e) => setFilter('congregationId', e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm">
+                  <option value="">Todas</option>
+                  {(congregations || []).map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1">Punto asignado</label>
+                <select value={filters.locationId || ''} onChange={(e) => setFilter('locationId', e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm">
+                  <option value="">Todos</option>
+                  {(locations || []).map((l: any) => <option key={l.id} value={l.id}>{l.name}</option>)}
+                </select>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-text-secondary mb-1">Rol</label>
                 <select value={filters.role || ''} onChange={(e) => setFilter('role', e.target.value)}
@@ -91,6 +126,15 @@ export default function ReportsPage() {
                   <option value="AUXILIAR_PUNTO">Auxiliar de Punto</option>
                   <option value="ENCARGADO_EXPERIENCIAS">Encargado de Experiencias</option>
                   <option value="PUBLICADOR">Publicador</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1">Género</label>
+                <select value={filters.gender || ''} onChange={(e) => setFilter('gender', e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm">
+                  <option value="">Todos</option>
+                  <option value="M">Masculino</option>
+                  <option value="F">Femenino</option>
                 </select>
               </div>
               <div>
@@ -107,6 +151,22 @@ export default function ReportsPage() {
 
           {type === 'shifts' && (
             <>
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1">Punto</label>
+                <select value={filters.locationId || ''} onChange={(e) => setFilter('locationId', e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm">
+                  <option value="">Todos</option>
+                  {(locations || []).map((l: any) => <option key={l.id} value={l.id}>{l.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1">Franja horaria</label>
+                <select value={filters.timeSlotId || ''} onChange={(e) => setFilter('timeSlotId', e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm">
+                  <option value="">Todas</option>
+                  {(timeslots || []).map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-text-secondary mb-1">Estado</label>
                 <select value={filters.status || ''} onChange={(e) => setFilter('status', e.target.value)}
@@ -126,16 +186,38 @@ export default function ReportsPage() {
           )}
 
           {type === 'experiences' && (
-            <div>
-              <label className="block text-sm font-medium text-text-secondary mb-1">Estado</label>
-              <select value={filters.status || ''} onChange={(e) => setFilter('status', e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm">
-                <option value="">Todos</option>
-                <option value="PENDIENTE">Pendientes</option>
-                <option value="APROBADO">Aprobadas</option>
-                <option value="RECHAZADO">Rechazadas</option>
-              </select>
-            </div>
+            <>
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1">Estado</label>
+                <select value={filters.status || ''} onChange={(e) => setFilter('status', e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm">
+                  <option value="">Todos</option>
+                  <option value="PENDIENTE">Pendientes</option>
+                  <option value="APROBADO">Aprobadas</option>
+                  <option value="RECHAZADO">Rechazadas</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1">Publicador</label>
+                <select value={filters.publisherId || ''} onChange={(e) => setFilter('publisherId', e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm">
+                  <option value="">Todos</option>
+                  {(allPublishers || []).map((p: any) => (
+                    <option key={p.id} value={p.id}>
+                      {p.marriedLastName ? `${p.firstName} de ${p.marriedLastName}` : `${p.firstName} ${p.lastName}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1">Congregación</label>
+                <select value={filters.congregationId || ''} onChange={(e) => setFilter('congregationId', e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm">
+                  <option value="">Todas</option>
+                  {(congregations || []).map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+            </>
           )}
 
           {type === 'locations' && (
