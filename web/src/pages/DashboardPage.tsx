@@ -1,11 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Users, Calendar, FileText, MapPin, Check, X } from 'lucide-react';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Badge from '../components/Badge';
-
-const COLORS = ['#00796B', '#D32F2F', '#ED6C02'];
 
 const statusBadge: Record<string, 'success' | 'warning' | 'danger' | 'default'> = {
   ABIERTO: 'success', CERRADO: 'default', CANCELADO: 'danger',
@@ -32,11 +29,6 @@ export default function DashboardPage() {
         activeShifts,
         pendingExperiences,
         totalLocations: (locations.data as any[]).length,
-        experiencesByStatus: [
-          { status: 'Aprobadas', count: (experiences.data as any[]).filter((e: any) => e.status === 'APROBADO').length },
-          { status: 'Rechazadas', count: (experiences.data as any[]).filter((e: any) => e.status === 'RECHAZADO').length },
-          { status: 'Pendientes', count: pendingExperiences },
-        ],
       };
     },
     refetchInterval: 30000,
@@ -189,29 +181,9 @@ export default function DashboardPage() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-surface rounded-xl p-6 border border-border">
-              <h3 className="text-lg font-semibold text-text-primary mb-4">Experiencias por estado</h3>
-              {stats?.experiencesByStatus?.some((e: any) => e.count > 0) ? (
-                <ResponsiveContainer width="100%" height={250}>
-                  <PieChart>
-                    <Pie data={stats.experiencesByStatus.filter((e: any) => e.count > 0)} cx="50%" cy="50%" outerRadius={100}
-                      dataKey="count" nameKey="status" label={({ status, count }: any) => `${status}: ${count}`}>
-                      {stats.experiencesByStatus.filter((e: any) => e.count > 0).map((_: any, i: number) => (
-                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <p className="text-text-muted text-center py-8">Sin datos de experiencias</p>
-              )}
-            </div>
-
-            <div className="bg-surface rounded-xl p-6 border border-border">
-              <h3 className="text-lg font-semibold text-text-primary mb-4">Resumen de actividad</h3>
-              <div className="space-y-4">
+          <div className="bg-surface rounded-xl p-6 border border-border">
+            <h3 className="text-lg font-semibold text-text-primary mb-4">Resumen de actividad</h3>
+            <div className="space-y-4">
                 {[
                   { label: 'Publicadores activos', value: stats?.totalPublishers ?? 0, color: 'text-primary' },
                   { label: 'Turnos abiertos', value: stats?.activeShifts ?? 0, color: 'text-success' },
@@ -225,7 +197,6 @@ export default function DashboardPage() {
                 ))}
               </div>
             </div>
-          </div>
         </>
       )}
     </div>
