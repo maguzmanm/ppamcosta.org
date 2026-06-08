@@ -6,8 +6,6 @@ services:
     buildCommand: npm install && npx prisma generate && npm run build
     startCommand: node start-render.js
     envVars:
-      - key: NPM_CONFIG_PRODUCTION
-        value: "false"
       - key: DATABASE_URL
         sync: false
       - key: JWT_SECRET
