@@ -8,6 +8,9 @@ dist/
 
 # Entorno
 .env
+
+# Backups (datos sensibles)
+backup/
 .env.local
 .env.production
 
