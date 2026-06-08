@@ -89,8 +89,9 @@ export default function DashboardPage() {
         <div className="text-text-muted">Cargando estadísticas...</div>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {cards.map((card) => (
+          {user?.role !== 'PUBLICADOR' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              {cards.map((card) => (
               <div key={card.label} className="bg-surface rounded-xl p-6 border border-border shadow-sm">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-text-muted text-sm">{card.label}</p>
@@ -102,6 +103,7 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
+          )}
 
           {/* Mis turnos asignados */}
           <div className="mb-8">
