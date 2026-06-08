@@ -154,29 +154,31 @@ export async function locationsReport(req: Request, res: Response, next: NextFun
       orderBy: { name: 'asc' },
     });
 
-    const data = locations.map((l) => {
+    const data: any[] = [];
+    for (const l of locations) {
       const encargado = l.locationAssignments.find((a: any) => a.roleAtLocation === 'ENCARGADO');
       const auxiliar = l.locationAssignments.find((a: any) => a.roleAtLocation === 'AUXILIAR');
-      const publicadores = l.publishers.map((p) =>
-        p.marriedLastName ? `${p.firstName} de ${p.marriedLastName}` : `${p.firstName} ${p.lastName}`
-      ).join('; ');
-      return {
-        Nombre: l.name,
-        Dirección: l.address,
-        Latitud: l.latitude || '',
-        Longitud: l.longitude || '',
-        Encargado: encargado?.user?.publisher
-          ? `${encargado.user.publisher.firstName} ${encargado.user.publisher.lastName}`
-          : '',
-        Auxiliar: auxiliar?.user?.publisher
-          ? `${auxiliar.user.publisher.firstName} ${auxiliar.user.publisher.lastName}`
-          : '',
-        Publicadores: publicadores,
-        'Cant. publicadores': l.publishers.length,
-        Activo: l.isActive ? 'Sí' : 'No',
-        Notas: l.notes || '',
-      };
-    });
+      const pubList = l.publishers.length > 0 ? l.publishers : [null];
+      for (const p of pubList) {
+        data.push({
+          Punto: l.name,
+          Dirección: l.address,
+          Latitud: l.latitude || '',
+          Longitud: l.longitude || '',
+          Encargado: encargado?.user?.publisher
+            ? `${encargado.user.publisher.firstName} ${encargado.user.publisher.lastName}`
+            : '',
+          Auxiliar: auxiliar?.user?.publisher
+            ? `${auxiliar.user.publisher.firstName} ${auxiliar.user.publisher.lastName}`
+            : '',
+          Publicador: p
+            ? (p.marriedLastName ? `${p.firstName} de ${p.marriedLastName}` : `${p.firstName} ${p.lastName}`)
+            : '',
+          Activo: l.isActive ? 'Sí' : 'No',
+          Notas: l.notes || '',
+        });
+      }
+    }
 
     sendExcel(res, data, 'Puntos', 'puntos');
   } catch (err) { next(err); }
