@@ -156,31 +156,14 @@ export default function LocationsPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">Auxiliares de punto</label>
-            <div className="max-h-32 overflow-y-auto border border-border rounded-lg p-2 space-y-1">
+            <label className="block text-sm font-medium text-text-secondary mb-1">Auxiliar de punto</label>
+            <select value={form.auxiliarIds[0] || ''} onChange={(e) => setForm({ ...form, auxiliarIds: e.target.value ? [e.target.value] : [] })}
+              className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm">
+              <option value="">Seleccionar</option>
               {(auxiliares || []).map((p: any) => (
-                <label key={p.id} className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={form.auxiliarIds.includes(p.user?.id || '')}
-                    onChange={(e) => {
-                      const uid = p.user?.id || '';
-                      setForm({
-                        ...form,
-                        auxiliarIds: e.target.checked
-                          ? [...form.auxiliarIds, uid]
-                          : form.auxiliarIds.filter((id) => id !== uid),
-                      });
-                    }}
-                    className="rounded border-border"
-                  />
-                  {p.firstName} {p.lastName}
-                </label>
+                <option key={p.id} value={p.user?.id || ''}>{p.firstName} {p.lastName}</option>
               ))}
-              {(!auxiliares || auxiliares.length === 0) && (
-                <p className="text-xs text-text-muted py-1">No hay auxiliares disponibles</p>
-              )}
-            </div>
+            </select>
           </div>
         </div>
         <label className="flex items-center gap-2 text-sm text-text-secondary">
