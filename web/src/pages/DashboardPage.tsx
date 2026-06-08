@@ -57,8 +57,14 @@ export default function DashboardPage() {
     queryKey: ['myShifts', user?.publisherId],
     queryFn: async () => {
       if (!user?.publisherId) return [];
-      const { data } = await api.get('/shifts', { params: { publisherId: user.publisherId } });
-      return data as any[];
+      // Usar endpoint /shifts/my que devuelve asignaciones del usuario autenticado
+      const { data } = await api.get('/shifts/my');
+      // La respuesta son ShiftAssignments con shift anidado; extraemos el shift
+      return (data as any[]).map((a: any) => ({
+        ...a.shift,
+        assignmentStatus: a.status,       // estado de MI asignación
+        assignmentId: a.id,               // id de la asignación para responder
+      }));
     },
     enabled: !!user?.publisherId,
     refetchInterval: 30000,
@@ -88,9 +94,7 @@ export default function DashboardPage() {
 
   // Obtener estado de asignación para el publicador actual
   function myAssignmentStatus(shift: any): string {
-    if (!user?.publisherId) return 'PENDIENTE';
-    const myAssignment = shift.assignments?.find((a: any) => a.publisherId === user.publisherId);
-    return myAssignment?.status || 'PENDIENTE';
+    return shift.assignmentStatus || 'PENDIENTE';
   }
 
   const cards = [
