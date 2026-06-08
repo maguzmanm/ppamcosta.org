@@ -15,7 +15,7 @@ import { incidentRouter } from './routes/incidents';
 import { errorHandler } from './middleware/errorHandler';
 import { seedRouter } from './routes/seed';
 import { reportRouter } from './routes/reports';
-import pushRouter from './routes/push';
+import { pushRouter } from './routes/push';
 
 dotenv.config();
 

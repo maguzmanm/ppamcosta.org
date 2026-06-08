@@ -3,7 +3,7 @@ services:
     name: ppam-api
     env: node
     region: oregon
-    buildCommand: npm install && npx prisma generate && npm run build
+    buildCommand: npm install --include=dev && npx prisma generate && npm run build
     startCommand: node start-render.js
     envVars:
       - key: DATABASE_URL
