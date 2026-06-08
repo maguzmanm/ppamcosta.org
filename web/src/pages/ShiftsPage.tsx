@@ -158,7 +158,19 @@ export default function ShiftsPage() {
           { key: 'location', header: 'Punto', render: (s) => s.location?.name || '-', hideOnMobile: true },
           { key: 'time', header: 'Horario', render: (s) => s.timeSlot?.name || '-' },
           { key: 'status', header: 'Estado', render: (s) => <Badge variant={statusBadge[s.status] || 'default'}>{s.status}</Badge> },
-          { key: 'assignments', header: 'Asignados', render: (s) => `${s.assignments?.length || 0}/${s.maxPublishers}` },
+          { key: 'assignments', header: 'Asignados', render: (s) => (
+            <div className="text-sm">
+              {(s.assignments || []).length === 0 ? (
+                <span className="text-text-muted">Sin asignar</span>
+              ) : (
+                <ul className="list-disc list-inside">
+                  {(s.assignments || []).map((a: any) => (
+                    <li key={a.id}>{formatName(a.publisher)}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )},
           ...(canCreateShifts ? [{
             key: 'actions', header: '', className: 'w-24' as const,
             render: (s: Shift) => (

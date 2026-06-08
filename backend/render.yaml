@@ -24,5 +24,9 @@ services:
         value: no-reply@ppam.org
       - key: NODE_ENV
         value: production
+      - key: VAPID_PUBLIC_KEY
+        value: BPK8EhomUlXsVYAtZqIMgkrSlbPLoYIKunNw_rvbypDrsARO0b3O1fLHaq7juTmrLH5Rcqq3Aoh_BrWHdDlMmuQ
+      - key: VAPID_PRIVATE_KEY
+        value: m1eidLn046IkMtknjAatpmnq15ztrh9c3LRhqe5SwTI
       - key: PORT
         value: "3000"

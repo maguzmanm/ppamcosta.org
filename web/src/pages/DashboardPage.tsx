@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Users, Calendar, FileText, MapPin, Check, X } from 'lucide-react';
+import { Users, Calendar, FileText, MapPin, Check, X, Bell, BellOff } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Badge from '../components/Badge';
+import { getPermissionState, subscribeToPush, unsubscribeFromPush, isPushSupported } from '../services/push';
 
 const statusBadge: Record<string, 'success' | 'warning' | 'danger' | 'default'> = {
   ABIERTO: 'success', CERRADO: 'default', CANCELADO: 'danger',
@@ -11,6 +13,22 @@ const statusBadge: Record<string, 'success' | 'warning' | 'danger' | 'default'> 
 export default function DashboardPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+
+  // Push notifications
+  const [pushGranted, setPushGranted] = useState(getPermissionState() === 'granted');
+  const [pushSupported] = useState(isPushSupported());
+  const [pushDismissed, setPushDismissed] = useState(false);
+
+  const handleEnablePush = async () => {
+    const ok = await subscribeToPush();
+    setPushGranted(ok);
+  };
+
+  const handleDisablePush = async () => {
+    await unsubscribeFromPush();
+    setPushGranted(false);
+  };
+
   const { data: stats, isLoading } = useQuery({
     queryKey: ['dashboard'],
     queryFn: async () => {
@@ -85,6 +103,41 @@ export default function DashboardPage() {
   return (
     <div>
       <h2 className="text-2xl font-bold text-text-primary mb-6">Inicio</h2>
+
+      {/* Banner de notificaciones push */}
+      {pushSupported && !pushGranted && !pushDismissed && (
+        <div className="mb-6 p-4 bg-primary/10 border border-primary/20 rounded-xl flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Bell size={20} className="text-primary" />
+            <span className="text-sm text-text-primary">
+              Activa las notificaciones para recibir alertas de turnos al instante
+            </span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button onClick={handleEnablePush}
+              className="px-3 py-1.5 text-xs font-medium bg-primary text-white rounded-lg hover:bg-primary-light transition-colors">
+              Activar
+            </button>
+            <button onClick={() => setPushDismissed(true)}
+              className="p-1.5 rounded-lg hover:bg-surface-hover text-text-muted">
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      )}
+      {pushGranted && (
+        <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Bell size={20} className="text-success" />
+            <span className="text-sm text-text-primary">Notificaciones activadas</span>
+          </div>
+          <button onClick={handleDisablePush}
+            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-text-muted border border-border rounded-lg hover:bg-surface-hover transition-colors">
+            <BellOff size={14} /> Desactivar
+          </button>
+        </div>
+      )}
+
       {isLoading ? (
         <div className="text-text-muted">Cargando estadísticas...</div>
       ) : (

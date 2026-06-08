@@ -1,8 +1,16 @@
 import prisma from '../prisma';
 import { Expo } from 'expo-server-sdk';
+import webpush from 'web-push';
 import { sendEmail, buildTurnoEmailTemplate, buildExperienciaPendienteEmail } from './email';
 
 const expo = new Expo();
+
+// Configurar web-push con claves VAPID
+webpush.setVapidDetails(
+  'mailto:admin@ppamcosta.org',
+  process.env.VAPID_PUBLIC_KEY || '',
+  process.env.VAPID_PRIVATE_KEY || ''
+);
 
 interface CreateNotificationParams {
   userId: string;
@@ -59,48 +67,90 @@ async function sendPushNotification(
   body: string,
   data?: Record<string, unknown>
 ): Promise<void> {
+  // Intentar Expo Push (apps nativas)
   try {
     const deviceToken = await prisma.deviceToken.findUnique({
       where: { userId },
     });
 
-    if (!deviceToken) {
-      console.log(`[PUSH] No hay device token para usuario ${userId}`);
-      return;
-    }
+    if (deviceToken && Expo.isExpoPushToken(deviceToken.token)) {
+      const messages = [{
+        to: deviceToken.token,
+        sound: 'default' as const,
+        title,
+        body,
+        data: data ? Object.fromEntries(
+          Object.entries(data).map(([k, v]) => [k, String(v)])
+        ) : {},
+      }];
 
-    if (!Expo.isExpoPushToken(deviceToken.token)) {
-      console.log(`[PUSH] Token inválido para usuario ${userId}: ${deviceToken.token}`);
-      return;
-    }
-
-    const messages = [{
-      to: deviceToken.token,
-      sound: 'default' as const,
-      title,
-      body,
-      data: data ? Object.fromEntries(
-        Object.entries(data).map(([k, v]) => [k, String(v)])
-      ) : {},
-    }];
-
-    const chunks = expo.chunkPushNotifications(messages);
-    for (const chunk of chunks) {
-      try {
-        const tickets = await expo.sendPushNotificationsAsync(chunk);
-        console.log(`[PUSH] Enviado a usuario ${userId}: ${title}`);
-        // Si el token es inválido, eliminarlo
-        for (const ticket of tickets) {
-          if (ticket.status === 'error' && ticket.details?.error === 'DeviceNotRegistered') {
-            await prisma.deviceToken.delete({ where: { userId } }).catch(() => {});
+      const chunks = expo.chunkPushNotifications(messages);
+      for (const chunk of chunks) {
+        try {
+          const tickets = await expo.sendPushNotificationsAsync(chunk);
+          for (const ticket of tickets) {
+            if (ticket.status === 'error' && ticket.details?.error === 'DeviceNotRegistered') {
+              await prisma.deviceToken.delete({ where: { userId } }).catch(() => {});
+            }
           }
+        } catch (err) {
+          console.error(`[PUSH] Error chunk:`, err);
         }
-      } catch (err) {
-        console.error(`[PUSH] Error chunk:`, err);
       }
     }
   } catch (error) {
-    console.error(`[PUSH] Error enviando a usuario ${userId}:`, error);
+    console.error(`[PUSH] Error Expo:`, error);
+  }
+
+  // Intentar Web Push (PWA/navegadores)
+  try {
+    await sendWebPushNotification(userId, title, body, data);
+  } catch (error) {
+    console.error(`[PUSH] Error Web Push:`, error);
+  }
+}
+
+async function sendWebPushNotification(
+  userId: string,
+  title: string,
+  body: string,
+  data?: Record<string, unknown>
+): Promise<void> {
+  const subscriptions = await prisma.pushSubscription.findMany({
+    where: { userId },
+  });
+
+  if (subscriptions.length === 0) return;
+
+  const payload = JSON.stringify({ title, body, data, icon: '/icon-192.png' });
+
+  const results = await Promise.allSettled(
+    subscriptions.map(sub =>
+      webpush.sendNotification(
+        {
+          endpoint: sub.endpoint,
+          keys: { p256dh: sub.p256dh, auth: sub.auth },
+        },
+        payload
+      )
+    )
+  );
+
+  // Limpiar suscripciones inválidas
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i];
+    if (result.status === 'rejected') {
+      const err = result.reason;
+      if (err?.statusCode === 410 || err?.statusCode === 404) {
+        await prisma.pushSubscription.delete({
+          where: { id: subscriptions[i].id },
+        }).catch(() => {});
+      }
+    }
+  }
+
+  if (subscriptions.length > 0) {
+    console.log(`[WEB-PUSH] Enviado a ${results.filter(r => r.status === 'fulfilled').length}/${subscriptions.length} dispositivos`);
   }
 }
 

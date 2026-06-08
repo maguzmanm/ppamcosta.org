@@ -93,6 +93,7 @@ model User {
   announcements   Announcement[]
   // Notificaciones
   deviceToken     DeviceToken?
+  pushSubscriptions PushSubscription[]
   notificationPref NotificationPreference?
   notifications   Notification[]
   // Incidentes
@@ -213,7 +214,7 @@ model Announcement {
   @@map("announcements")
 }
 
-// ─── Device tokens (push notifications) ───
+// ─── Device tokens (push notifications - Expo/nativo) ───
 model DeviceToken {
   id        String   @id @default(uuid())
   userId    String   @unique @map("user_id")
@@ -223,6 +224,20 @@ model DeviceToken {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("device_tokens")
+}
+
+// ─── Suscripciones push web (PWA) ───
+model PushSubscription {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint   String   @unique
+  p256dh     String
+  auth       String
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("push_subscriptions")
 }
 
 // ─── Preferencias de notificación ───
