@@ -15,6 +15,7 @@ import AvailabilityPage from './pages/AvailabilityPage';
 import ProfilePage from './pages/ProfilePage';
 import AnnouncementsPage from './pages/AnnouncementsPage';
 import ReportsPage from './pages/ReportsPage';
+import NotificationsPage from './pages/NotificationsPage';
 import type { UserRole } from './types';
 
 const queryClient = new QueryClient({
@@ -106,6 +107,14 @@ function AppRoutes() {
           element={<AvailabilityPage />}
         />
         <Route path="/anuncios" element={<AnnouncementsPage />} />
+        <Route
+          path="/notificaciones"
+          element={
+            <ProtectedRoute roles={['COORDINADOR', 'AUXILIAR']}>
+              <NotificationsPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/reportes"
           element={

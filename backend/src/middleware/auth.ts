@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken, TokenPayload } from '../utils/jwt';
-import { UnauthorizedError } from '../utils/errors';
+import { UnauthorizedError, ForbiddenError } from '../utils/errors';
 
 declare global {
   namespace Express {
@@ -24,4 +24,14 @@ export function authenticate(req: Request, _res: Response, next: NextFunction) {
   } catch {
     next(new UnauthorizedError('Token inválido o expirado'));
   }
+}
+
+export function requireRole(roles: string[]) {
+  return (req: Request, _res: Response, next: NextFunction) => {
+    if (!req.user) return next(new UnauthorizedError('No autenticado'));
+    if (!roles.includes(req.user.role)) {
+      return next(new ForbiddenError('No tienes permisos para esta acción'));
+    }
+    next();
+  };
 }

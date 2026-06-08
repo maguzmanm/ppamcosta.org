@@ -51,3 +51,25 @@ export async function unsubscribe(req: Request, res: Response, next: NextFunctio
     next(err);
   }
 }
+
+// Listar suscripciones (admin)
+export async function listSubscriptions(req: Request, res: Response, next: NextFunction) {
+  try {
+    const subs = await prisma.pushSubscription.findMany({
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            publisher: { select: { firstName: true, lastName: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json(subs);
+  } catch (err) {
+    next(err);
+  }
+}
