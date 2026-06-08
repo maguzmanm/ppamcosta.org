@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import dotenv from 'dotenv';
 import { authRouter } from './routes/auth';
 import { circuitRouter } from './routes/circuits';
@@ -24,8 +25,39 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
-app.use(express.json());
+// Seguridad
+app.use(helmet());
+app.use(cors({
+  origin: ['https://guzmanm.net', 'http://localhost:5173'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+app.use(express.json({ limit: '1mb' }));
+
+// Rate limiting simple para auth
+const authLimiter = new Map<string, { count: number; resetAt: number }>();
+app.use('/api/auth/login', (req, res, next) => {
+  const ip = req.ip || 'unknown';
+  const now = Date.now();
+  const entry = authLimiter.get(ip);
+  if (entry && now < entry.resetAt) {
+    if (entry.count >= 10) {
+      return res.status(429).json({ error: 'Demasiados intentos. Intenta en 15 minutos.' });
+    }
+    entry.count++;
+  } else {
+    authLimiter.set(ip, { count: 1, resetAt: now + 15 * 60 * 1000 });
+  }
+  next();
+});
+
+// Limpiar rate limits cada 30 min
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, entry] of authLimiter) {
+    if (now >= entry.resetAt) authLimiter.delete(ip);
+  }
+}, 30 * 60 * 1000);
 
 app.use('/api/auth', authRouter);
 app.use('/api/circuits', circuitRouter);
