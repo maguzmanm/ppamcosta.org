@@ -84,6 +84,9 @@ export default function ShiftsPage() {
       setModalOpen(false);
       resetForm();
     },
+    onError: (err: any) => {
+      alert(err?.response?.data?.error || 'Error al crear el turno. Revisa que el backend esté activo.');
+    },
   });
 
   const updateMutation = useMutation({
@@ -102,6 +105,9 @@ export default function ShiftsPage() {
       queryClient.invalidateQueries({ queryKey: ['shifts'] });
       setModalOpen(false);
       resetForm();
+    },
+    onError: (err: any) => {
+      alert(err?.response?.data?.error || 'Error al actualizar el turno.');
     },
   });
 
