@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Download, Filter } from 'lucide-react';
+import { Download } from 'lucide-react';
 import api from '../services/api';
 
 const REPORT_TYPES = [
