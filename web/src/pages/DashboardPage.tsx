@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { Users, Calendar, FileText, MapPin } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Users, Calendar, FileText, MapPin, Check, X } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -13,6 +13,7 @@ const statusBadge: Record<string, 'success' | 'warning' | 'danger' | 'default'> 
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { data: stats, isLoading } = useQuery({
     queryKey: ['dashboard'],
     queryFn: async () => {
@@ -52,6 +53,26 @@ export default function DashboardPage() {
     enabled: !!user?.publisherId,
     refetchInterval: 30000,
   });
+
+  // Responder a una asignación (aceptar/rechazar)
+  const respondMutation = useMutation({
+    mutationFn: async ({ shiftId, response }: { shiftId: string; response: string }) => {
+      return api.post(`/shifts/${shiftId}/respond`, { response });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['myShifts'] });
+    },
+    onError: (err: any) => {
+      alert(err?.response?.data?.error || 'Error al responder al turno');
+    },
+  });
+
+  // Obtener estado de asignación para el publicador actual
+  function myAssignmentStatus(shift: any): string {
+    if (!user?.publisherId) return 'PENDIENTE';
+    const myAssignment = shift.assignments?.find((a: any) => a.publisherId === user.publisherId);
+    return myAssignment?.status || 'PENDIENTE';
+  }
 
   const cards = [
     { label: 'Publicadores', value: stats?.totalPublishers ?? '--', icon: Users, color: 'text-primary', bg: 'bg-primary/10' },
@@ -99,10 +120,14 @@ export default function DashboardPage() {
                       <th className="text-left px-4 py-3 text-text-muted font-medium">Horario</th>
                       <th className="text-left px-4 py-3 text-text-muted font-medium hidden sm:table-cell">Punto</th>
                       <th className="text-left px-4 py-3 text-text-muted font-medium">Estado</th>
+                      <th className="text-left px-4 py-3 text-text-muted font-medium">Acción</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {myShifts.map((s: any) => (
+                    {myShifts.map((s: any) => {
+                      const myStatus = myAssignmentStatus(s);
+                      const isPending = myStatus === 'PENDIENTE';
+                      return (
                       <tr key={s.id} className="border-b border-border last:border-0 hover:bg-background/50">
                         <td className="px-4 py-3 text-text-primary">
                           {new Date(s.date).toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', month: 'short' })}
@@ -111,9 +136,36 @@ export default function DashboardPage() {
                         <td className="px-4 py-3 text-text-secondary hidden sm:table-cell">{s.location?.name}</td>
                         <td className="px-4 py-3">
                           <Badge variant={statusBadge[s.status] || 'default'}>{s.status}</Badge>
+                          {myStatus !== 'PENDIENTE' && (
+                            <span className={`ml-1.5 text-xs ${myStatus === 'ACEPTADO' ? 'text-success' : 'text-danger'}`}>
+                              · {myStatus === 'ACEPTADO' ? 'Aceptado' : 'Rechazado'}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {isPending ? (
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => respondMutation.mutate({ shiftId: s.id, response: 'ACEPTADO' })}
+                                disabled={respondMutation.isPending}
+                                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-white bg-success rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
+                              >
+                                <Check size={14} /> Aceptar
+                              </button>
+                              <button
+                                onClick={() => respondMutation.mutate({ shiftId: s.id, response: 'RECHAZADO' })}
+                                disabled={respondMutation.isPending}
+                                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-white bg-danger rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
+                              >
+                                <X size={14} /> Rechazar
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-text-muted">—</span>
+                          )}
                         </td>
                       </tr>
-                    ))}
+                    )})}
                   </tbody>
                 </table>
               </div>
