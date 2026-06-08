@@ -7,7 +7,7 @@ export const reportRouter = Router();
 
 reportRouter.use(authenticate);
 
-const reportRoles = ['COORDINADOR', 'AUXILIAR', 'ENCARGADO_PUNTO', 'AUXILIAR_PUNTO'];
+const reportRoles = ['COORDINADOR', 'AUXILIAR', 'ENCARGADO_PUNTO', 'AUXILIAR_PUNTO'] as const;
 
 reportRouter.get('/publishers', authorize(...reportRoles), publishersReport);
 reportRouter.get('/shifts', authorize(...reportRoles), shiftsReport);
