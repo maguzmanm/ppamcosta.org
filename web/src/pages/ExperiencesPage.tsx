@@ -9,11 +9,6 @@ const statusBadge: Record<string, 'success' | 'warning' | 'danger'> = {
   APROBADO: 'success', PENDIENTE: 'warning', RECHAZADO: 'danger',
 };
 
-function formatName(p: { firstName: string; lastName: string; marriedLastName?: string }) {
-  if (p.marriedLastName) return `${p.firstName} de ${p.marriedLastName}`;
-  return `${p.firstName} ${p.lastName}`;
-}
-
 export default function ExperiencesPage() {
   const queryClient = useQueryClient();
   const { canManageExperiences } = useAuth();
@@ -64,8 +59,7 @@ export default function ExperiencesPage() {
               </div>
               <p className="text-text-secondary whitespace-pre-wrap">{e.content}</p>
               <div className="flex items-center gap-4 mt-3 text-xs text-text-muted">
-                <span>{formatName(e.publisher)}</span>
-                <span>{new Date(e.createdAt).toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                <span>{new Date(e.status === 'PENDIENTE' ? e.createdAt : e.updatedAt).toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
               </div>
             </div>
           ))}
