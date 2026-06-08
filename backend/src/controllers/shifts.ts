@@ -31,7 +31,7 @@ export async function list(req: Request, res: Response, next: NextFunction) {
         },
         assignments: {
           include: {
-            publisher: { select: { id: true, firstName: true, lastName: true, congregation: { select: { name: true } } } },
+            publisher: { select: { id: true, firstName: true, lastName: true, marriedLastName: true, congregation: { select: { name: true } } } },
           },
         },
       },
