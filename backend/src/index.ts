@@ -17,6 +17,7 @@ import { seedRouter } from './routes/seed';
 
 dotenv.config();
 
+// v2.1 - MySQL en cPanel, notificaciones async, sin Noticias
 const app = express();
 const PORT = process.env.PORT || 3000;
 
