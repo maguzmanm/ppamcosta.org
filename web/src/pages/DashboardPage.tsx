@@ -63,7 +63,16 @@ export default function DashboardPage() {
       queryClient.invalidateQueries({ queryKey: ['myShifts'] });
     },
     onError: (err: any) => {
-      alert(err?.response?.data?.error || 'Error al responder al turno');
+      const msg = err?.response?.data?.error || 'Error al responder al turno';
+      const contacts = err?.response?.data?.details;
+      if (contacts && Array.isArray(contacts)) {
+        const contactStr = contacts.map((c: any) =>
+          `• ${c.name} (${c.role}): ${c.phone}`
+        ).join('\n');
+        alert(`${msg}\n\nContactos:\n${contactStr}`);
+      } else {
+        alert(msg);
+      }
     },
   });
 
@@ -160,6 +169,14 @@ export default function DashboardPage() {
                                 <X size={14} /> Rechazar
                               </button>
                             </div>
+                          ) : myStatus === 'ACEPTADO' ? (
+                            <button
+                              onClick={() => respondMutation.mutate({ shiftId: s.id, response: 'RECHAZADO' })}
+                              disabled={respondMutation.isPending}
+                              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-danger border border-danger rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
+                            >
+                              <X size={14} /> Rechazar
+                            </button>
                           ) : (
                             <span className="text-xs text-text-muted">—</span>
                           )}

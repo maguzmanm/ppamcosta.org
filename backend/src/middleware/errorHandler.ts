@@ -8,9 +8,11 @@ export function errorHandler(
   _next: NextFunction
 ) {
   if (err instanceof AppError) {
-    return res.status(err.statusCode).json({
-      error: err.message,
-    });
+    const body: any = { error: err.message };
+    if ((err as any).details) {
+      body.details = (err as any).details;
+    }
+    return res.status(err.statusCode).json(body);
   }
 
   console.error('Error inesperado:', err);

@@ -324,8 +324,56 @@ export async function respondToAssignment(req: Request, res: Response, next: Nex
 
     const assignment = await prisma.shiftAssignment.findUnique({
       where: { shiftId_publisherId: { shiftId, publisherId } },
+      include: { shift: { include: { location: true } } },
     });
     if (!assignment) throw new NotFoundError('No estás asignado a este turno');
+
+    // Si ya aceptó y quiere rechazar, bloquear y devolver contactos
+    if (assignment.status === 'ACEPTADO' && response === 'RECHAZADO') {
+      const location = assignment.shift.location;
+      // Buscar encargados y auxiliares del punto
+      const contacts = await prisma.locationAssignment.findMany({
+        where: {
+          locationId: location.id,
+          roleAtLocation: { in: ['ENCARGADO', 'AUXILIAR'] },
+        },
+        include: {
+          user: {
+            include: {
+              publisher: { select: { firstName: true, lastName: true, phone: true } },
+            },
+          },
+        },
+      });
+
+      const contactList = contacts.map((c) => ({
+        name: c.user.publisher
+          ? `${c.user.publisher.firstName} ${c.user.publisher.lastName}`
+          : c.user.email,
+        role: c.roleAtLocation === 'ENCARGADO' ? 'Encargado de Punto' : 'Auxiliar de Punto',
+        phone: c.user.publisher?.phone || 'Sin teléfono',
+      }));
+
+      // También buscar al coordinador
+      const coordinators = await prisma.user.findMany({
+        where: { role: 'COORDINADOR' },
+        include: { publisher: { select: { firstName: true, lastName: true, phone: true } } },
+      });
+      for (const c of coordinators) {
+        contactList.push({
+          name: c.publisher
+            ? `${c.publisher.firstName} ${c.publisher.lastName}`
+            : c.email,
+          role: 'Coordinador',
+          phone: c.publisher?.phone || 'Sin teléfono',
+        });
+      }
+
+      throw new ValidationError(
+        'Ya aceptaste este turno. Para rechazarlo debes comunicarte con el encargado del punto.',
+        contactList
+      );
+    }
 
     const updated = await prisma.shiftAssignment.update({
       where: { id: assignment.id },

@@ -29,7 +29,9 @@ export class ForbiddenError extends AppError {
 }
 
 export class ValidationError extends AppError {
-  constructor(message = 'Datos inválidos') {
+  public details: any;
+  constructor(message = 'Datos inválidos', details?: any) {
     super(message, 400);
+    this.details = details;
   }
 }
