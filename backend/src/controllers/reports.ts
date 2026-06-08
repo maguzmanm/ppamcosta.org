@@ -134,9 +134,10 @@ export async function experiencesReport(req: Request, res: Response, next: NextF
 // ─── Puntos ───
 export async function locationsReport(req: Request, res: Response, next: NextFunction) {
   try {
-    const { isActive } = req.query;
+    const { isActive, locationId } = req.query;
     const where: any = {};
     if (isActive !== undefined) where.isActive = isActive === 'true';
+    if (locationId) where.id = String(locationId);
 
     const locations = await prisma.location.findMany({
       where,

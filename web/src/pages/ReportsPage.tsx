@@ -221,15 +221,25 @@ export default function ReportsPage() {
           )}
 
           {type === 'locations' && (
-            <div>
-              <label className="block text-sm font-medium text-text-secondary mb-1">Estado</label>
-              <select value={filters.isActive ?? ''} onChange={(e) => setFilter('isActive', e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm">
-                <option value="">Todos</option>
-                <option value="true">Activos</option>
-                <option value="false">Inactivos</option>
-              </select>
-            </div>
+            <>
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1">Punto</label>
+                <select value={filters.locationId || ''} onChange={(e) => setFilter('locationId', e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm">
+                  <option value="">Todos</option>
+                  {(locations || []).map((l: any) => <option key={l.id} value={l.id}>{l.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1">Estado</label>
+                <select value={filters.isActive ?? ''} onChange={(e) => setFilter('isActive', e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm">
+                  <option value="">Todos</option>
+                  <option value="true">Activos</option>
+                  <option value="false">Inactivos</option>
+                </select>
+              </div>
+            </>
           )}
         </div>
 
