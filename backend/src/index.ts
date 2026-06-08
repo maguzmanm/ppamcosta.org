@@ -41,6 +41,10 @@ app.use('/api/seed', seedRouter);
 app.use('/api/reports', reportRouter);
 app.use('/api/push', pushRouter);
 
+app.get('/api/ping', (_req, res) => {
+  res.json({ ping: 'pong', pushRouter: !!pushRouter });
+});
+
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
