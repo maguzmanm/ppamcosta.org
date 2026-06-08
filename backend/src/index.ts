@@ -15,7 +15,8 @@ import { incidentRouter } from './routes/incidents';
 import { errorHandler } from './middleware/errorHandler';
 import { seedRouter } from './routes/seed';
 import { reportRouter } from './routes/reports';
-import { pushRouter } from './routes/push';
+import { authenticate, requireRole } from './middleware/auth';
+import { subscribe, unsubscribe, listSubscriptions } from './controllers/push';
 
 dotenv.config();
 
@@ -39,7 +40,11 @@ app.use('/api/notifications', notificationRouter);
 app.use('/api/incidents', incidentRouter);
 app.use('/api/seed', seedRouter);
 app.use('/api/reports', reportRouter);
-app.use('/api/push', pushRouter);
+
+// Push notifications (PWA)
+app.post('/api/push/subscribe', authenticate, subscribe);
+app.post('/api/push/unsubscribe', authenticate, unsubscribe);
+app.get('/api/push/subscriptions', authenticate, requireRole(['COORDINADOR', 'AUXILIAR']), listSubscriptions);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
