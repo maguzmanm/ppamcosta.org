@@ -1,6 +1,39 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { Download } from 'lucide-react';
+
+// Evento de instalación PWA
+let deferredPrompt: any = null;
+
+export default function LoginPage() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [installable, setInstallable] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      setInstallable(true);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  async function handleInstall() {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const result = await deferredPrompt.userChoice;
+    if (result.outcome === 'accepted') {
+      setInstallable(false);
+    }
+    deferredPrompt = null;
+  }
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -89,6 +122,19 @@ export default function LoginPage() {
         <p className="text-center text-text-muted text-xs mt-6">
           Todos los derechos reservados. PPAM Costa © 2026
         </p>
+
+        {installable && (
+          <div className="mt-4 pt-4 border-t border-border text-center">
+            <button
+              onClick={handleInstall}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary border border-primary rounded-lg hover:bg-primary/5 transition-colors"
+            >
+              <Download size={16} />
+              Instalar app
+            </button>
+            <p className="text-text-muted text-xs mt-1">Agrega PPAM Costa a tu pantalla de inicio</p>
+          </div>
+        )}
       </div>
     </div>
   );
