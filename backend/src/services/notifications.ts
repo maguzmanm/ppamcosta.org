@@ -6,12 +6,14 @@ import { sendEmail, buildTurnoEmailTemplate, buildExperienciaPendienteEmail } fr
 
 const expo = new Expo();
 
-// Configurar web-push con claves VAPID
-webpush.setVapidDetails(
-  'mailto:admin@ppamcosta.org',
-  process.env.VAPID_PUBLIC_KEY || '',
-  process.env.VAPID_PRIVATE_KEY || ''
-);
+// Configurar web-push solo si hay claves VAPID
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    'mailto:admin@ppamcosta.org',
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+}
 
 interface CreateNotificationParams {
   userId: string;
@@ -117,6 +119,9 @@ async function sendWebPushNotification(
   body: string,
   data?: Record<string, unknown>
 ): Promise<void> {
+  if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+    return; // Web Push no configurado
+  }
   const subscriptions = await prisma.pushSubscription.findMany({
     where: { userId },
   });
