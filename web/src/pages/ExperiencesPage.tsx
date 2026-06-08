@@ -66,7 +66,7 @@ export default function ExperiencesPage() {
               <div className="flex items-center gap-4 mt-3 text-xs text-text-muted">
                 <span>{formatName(e.publisher)}</span>
                 <span>{new Date(e.createdAt).toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-                {e.congregation && <span>{e.congregation.name}</span>}
+                {e.publisher?.congregation?.name && <span>{e.publisher.congregation.name}</span>}
               </div>
             </div>
           ))}
