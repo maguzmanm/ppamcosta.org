@@ -138,6 +138,11 @@ export async function locationsReport(req: Request, res: Response, next: NextFun
         locationAssignments: {
           include: { user: { include: { publisher: { select: { firstName: true, lastName: true } } } } },
         },
+        publishers: {
+          where: { isActive: true },
+          select: { firstName: true, lastName: true, marriedLastName: true },
+          orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+        },
       },
       orderBy: { name: 'asc' },
     });
@@ -145,6 +150,9 @@ export async function locationsReport(req: Request, res: Response, next: NextFun
     const data = locations.map((l) => {
       const encargado = l.locationAssignments.find((a: any) => a.roleAtLocation === 'ENCARGADO');
       const auxiliar = l.locationAssignments.find((a: any) => a.roleAtLocation === 'AUXILIAR');
+      const publicadores = l.publishers.map((p) =>
+        p.marriedLastName ? `${p.firstName} de ${p.marriedLastName}` : `${p.firstName} ${p.lastName}`
+      ).join('; ');
       return {
         Nombre: l.name,
         Dirección: l.address,
@@ -156,6 +164,8 @@ export async function locationsReport(req: Request, res: Response, next: NextFun
         Auxiliar: auxiliar?.user?.publisher
           ? `${auxiliar.user.publisher.firstName} ${auxiliar.user.publisher.lastName}`
           : '',
+        Publicadores: publicadores,
+        'Cant. publicadores': l.publishers.length,
         Activo: l.isActive ? 'Sí' : 'No',
         Notas: l.notes || '',
       };
