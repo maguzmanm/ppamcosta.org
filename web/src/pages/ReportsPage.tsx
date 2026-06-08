@@ -30,6 +30,10 @@ export default function ReportsPage() {
       const response = await api.get(`/reports/${type}?${params}`, {
         responseType: 'blob',
       });
+      // Verificar que sea un blob válido (no un JSON de error)
+      if (response.data.type === 'application/json') {
+        throw new Error('El servidor devolvió un error');
+      }
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -39,7 +43,17 @@ export default function ReportsPage() {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (err: any) {
-      alert('Error al generar el reporte');
+      if (err?.response?.data instanceof Blob) {
+        const text = await err.response.data.text();
+        try {
+          const json = JSON.parse(text);
+          alert(json.error || 'Error al generar el reporte');
+        } catch {
+          alert('Error al generar el reporte');
+        }
+      } else {
+        alert('Error al generar el reporte. Asegúrate de que el backend esté activo.');
+      }
     } finally {
       setLoading(false);
     }
