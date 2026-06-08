@@ -1,5 +1,6 @@
 import prisma from '../prisma';
 import { Expo } from 'expo-server-sdk';
+// @ts-ignore - @types/web-push no resuelve en Render
 import webpush from 'web-push';
 import { sendEmail, buildTurnoEmailTemplate, buildExperienciaPendienteEmail } from './email';
 
