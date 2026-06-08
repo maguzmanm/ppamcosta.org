@@ -118,7 +118,7 @@ export async function experiencesReport(req: Request, res: Response, next: NextF
       Congregación: e.publisher.congregation?.name || '',
       Estado: e.status,
       Contenido: e.content,
-      'Notas del revisor': e.reviewerNotes || '',
+      'Notas del revisor': e.reviewNotes || '',
     }));
 
     sendExcel(res, data, 'Experiencias', 'experiencias');

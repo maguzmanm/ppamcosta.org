@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { authenticate, authorize } from '../middleware/auth';
+import { authenticate } from '../middleware/auth';
+import { authorize } from '../middleware/authorize';
 import { publishersReport, shiftsReport, experiencesReport, locationsReport } from '../controllers/reports';
 
 export const reportRouter = Router();
