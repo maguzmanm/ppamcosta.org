@@ -14,6 +14,7 @@ import { notificationRouter } from './routes/notifications';
 import { incidentRouter } from './routes/incidents';
 import { errorHandler } from './middleware/errorHandler';
 import { seedRouter } from './routes/seed';
+import { reportRouter } from './routes/reports';
 
 dotenv.config();
 
@@ -36,6 +37,7 @@ app.use('/api/announcements', announcementRouter);
 app.use('/api/notifications', notificationRouter);
 app.use('/api/incidents', incidentRouter);
 app.use('/api/seed', seedRouter);
+app.use('/api/reports', reportRouter);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
