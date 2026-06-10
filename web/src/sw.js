@@ -6,6 +6,8 @@ import { precacheAndRoute } from 'workbox-precaching';
 import { NetworkOnly } from 'workbox-strategies';
 import { registerRoute } from 'workbox-routing';
 
+// Forzar activación inmediata del nuevo SW
+self.skipWaiting();
 clientsClaim();
 
 precacheAndRoute(self.__WB_MANIFEST || []);
