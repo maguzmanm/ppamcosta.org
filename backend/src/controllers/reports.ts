@@ -183,3 +183,92 @@ export async function locationsReport(req: Request, res: Response, next: NextFun
     sendExcel(res, data, 'Puntos', 'puntos');
   } catch (err) { next(err); }
 }
+
+// ─── Disponibilidad de Publicadores ───
+export async function availabilityReport(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { publisherName, locationId, dayOfWeek, timeSlotId } = req.query;
+
+    const where: any = {};
+    if (dayOfWeek !== undefined && dayOfWeek !== '') {
+      where.dayOfWeek = Number(dayOfWeek);
+    }
+    if (timeSlotId) {
+      where.timeSlotId = String(timeSlotId);
+    }
+    if (publisherName) {
+      where.publisher = {
+        OR: [
+          { firstName: { contains: String(publisherName) } },
+          { lastName: { contains: String(publisherName) } },
+          { marriedLastName: { contains: String(publisherName) } },
+        ],
+      };
+    }
+    if (locationId) {
+      where.publisher = {
+        ...(where.publisher || {}),
+        locationId: String(locationId),
+      };
+    }
+
+    const availabilities = await prisma.availability.findMany({
+      where,
+      include: {
+        publisher: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            marriedLastName: true,
+            gender: true,
+            congregation: { select: { name: true } },
+            location: { select: { id: true, name: true } },
+          },
+        },
+        timeSlot: {
+          select: { id: true, name: true, startTime: true, endTime: true },
+        },
+      },
+      orderBy: [
+        { publisher: { lastName: 'asc' } },
+        { publisher: { firstName: 'asc' } },
+        { dayOfWeek: 'asc' },
+        { timeSlot: { sortOrder: 'asc' } },
+      ],
+    });
+
+    const DAYS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+    const data = availabilities.map((a) => ({
+      id: a.id,
+      publisherId: a.publisher.id,
+      publisherName: a.publisher.marriedLastName
+        ? `${a.publisher.firstName} de ${a.publisher.marriedLastName}`
+        : `${a.publisher.firstName} ${a.publisher.lastName}`,
+      gender: a.publisher.gender,
+      congregation: a.publisher.congregation?.name || '',
+      locationName: a.publisher.location?.name || '—',
+      locationId: a.publisher.location?.id || '',
+      dayOfWeek: a.dayOfWeek,
+      dayName: DAYS[a.dayOfWeek] || '',
+      timeSlotId: a.timeSlot.id,
+      timeSlotName: a.timeSlot.name,
+      timeSlotRange: `${a.timeSlot.startTime?.substring(0, 5) || ''} - ${a.timeSlot.endTime?.substring(0, 5) || ''}`,
+    }));
+
+    // Si es descarga Excel
+    if (req.query.format === 'excel') {
+      const excelData = data.map((d) => ({
+        Publicador: d.publisherName,
+        Congregación: d.congregation,
+        Punto: d.locationName,
+        Día: d.dayName,
+        Horario: d.timeSlotRange,
+      }));
+      return sendExcel(res, excelData, 'Disponibilidad', 'disponibilidad');
+    }
+
+    res.json({ data, total: data.length });
+  } catch (err) { next(err); }
+}

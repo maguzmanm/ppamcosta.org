@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
 import { authorize } from '../middleware/authorize';
-import { publishersReport, shiftsReport, experiencesReport, locationsReport } from '../controllers/reports';
+import { publishersReport, shiftsReport, experiencesReport, locationsReport, availabilityReport } from '../controllers/reports';
 
 export const reportRouter = Router();
 
@@ -13,3 +13,4 @@ reportRouter.get('/publishers', authorize(...reportRoles), publishersReport);
 reportRouter.get('/shifts', authorize(...reportRoles), shiftsReport);
 reportRouter.get('/experiences', authorize(...reportRoles), experiencesReport);
 reportRouter.get('/locations', authorize(...reportRoles), locationsReport);
+reportRouter.get('/availability', authorize(...reportRoles), availabilityReport);
