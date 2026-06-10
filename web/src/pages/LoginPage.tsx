@@ -114,7 +114,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="w-full max-w-md p-8 bg-surface rounded-xl shadow-lg border border-border">
         <div className="text-center mb-8">
-          <img src="/logo.png" alt="PPAM Costa" className="w-24 h-24 mb-4 rounded-xl shadow-md inline-block" />
+          <img src="/logo.png" alt="PPAM Costa" className="w-24 h-auto max-w-full mb-4 rounded-xl shadow-md inline-block" />
           <h1 className="text-2xl font-bold text-primary">PPAM Costa</h1>
           <p className="text-text-secondary mt-2">
             Predicación Pública Áreas Metropolitanas
