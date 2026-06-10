@@ -15,7 +15,7 @@ export default defineConfig({
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
       },
-      includeAssets: ['favicon.svg', 'icons.svg', 'icon-32.png', 'icon-192.png', 'icon-512.png', 'logo.png'],
+      includeAssets: ['favicon.png', 'icon-32.png', 'icon-192.png', 'icon-512.png', 'logo.png'],
       manifest: {
         name: 'PPAM Costa - Predicación Pública',
         short_name: 'PPAM Costa',
