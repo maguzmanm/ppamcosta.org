@@ -137,7 +137,7 @@ export default function LoginPage() {
             <div>
               <label className="block text-sm font-medium text-text-secondary mb-1">Correo electrónico</label>
               <input type="email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} required
-                className="w-full px-4 py-2.5 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="usuario@ppam.org" />
+                className="w-full px-4 py-2.5 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30" placeholder="mail@ppamcosta.org" />
             </div>
 
             <button type="submit" disabled={loading}
@@ -214,7 +214,7 @@ export default function LoginPage() {
               className="w-full px-4 py-2.5 rounded-lg border border-border bg-surface text-text-primary
                          focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary
                          placeholder:text-text-muted"
-              placeholder="usuario@ppam.org"
+              placeholder="mail@ppamcosta.org"
             />
           </div>
 
