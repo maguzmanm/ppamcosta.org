@@ -105,7 +105,7 @@ export default function DashboardLayout() {
   );
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-dvh bg-background">
       {/* Sidebar desktop */}
       <aside className="hidden md:flex md:w-60 lg:w-64 flex-shrink-0 bg-surface border-r border-border">
         {sidebar}

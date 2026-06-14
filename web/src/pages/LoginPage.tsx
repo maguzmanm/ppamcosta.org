@@ -111,7 +111,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="min-h-dvh flex items-center justify-center bg-background">
       <div className="w-full max-w-md p-8 bg-surface rounded-xl shadow-lg border border-border">
         <div className="text-center mb-8">
           <img src="/logo.png" alt="PPAM Costa" className="w-24 h-auto max-w-full mb-4 rounded-xl shadow-md inline-block" />
