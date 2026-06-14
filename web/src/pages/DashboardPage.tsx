@@ -32,21 +32,29 @@ export default function DashboardPage() {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['dashboard'],
     queryFn: async () => {
-      const [publishers, shifts, experiences, locations] = await Promise.all([
-        api.get('/publishers'),
-        api.get('/shifts'),
-        api.get('/experiences'),
-        api.get('/locations'),
+      const results = await Promise.allSettled([
+        api.get('/publishers').catch(() => ({ data: [] })),
+        api.get('/shifts').catch(() => ({ data: [] })),
+        api.get('/experiences').catch(() => ({ data: [] })),
+        api.get('/locations').catch(() => ({ data: [] })),
       ]);
 
-      const activeShifts = (shifts.data as any[]).filter((s: any) => s.status === 'ABIERTO').length;
-      const pendingExperiences = (experiences.data as any[]).filter((e: any) => e.status === 'PENDIENTE').length;
+      const getData = (r: PromiseSettledResult<any>) =>
+        r.status === 'fulfilled' ? r.value.data : [];
+
+      const publishers = getData(results[0]);
+      const shifts = getData(results[1]);
+      const experiences = getData(results[2]);
+      const locations = getData(results[3]);
+
+      const activeShifts = (Array.isArray(shifts) ? shifts : []).filter((s: any) => s.status === 'ABIERTO').length;
+      const pendingExperiences = (Array.isArray(experiences) ? experiences : []).filter((e: any) => e.status === 'PENDIENTE').length;
 
       return {
-        totalPublishers: (publishers.data as any[]).length,
+        totalPublishers: (Array.isArray(publishers) ? publishers : []).length,
         activeShifts,
         pendingExperiences,
-        totalLocations: (locations.data as any[]).length,
+        totalLocations: (Array.isArray(locations) ? locations : []).length,
       };
     },
     refetchInterval: 30000,
