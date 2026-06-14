@@ -10,11 +10,13 @@ import { registerRoute } from 'workbox-routing';
 self.skipWaiting();
 clientsClaim();
 
+// En iOS WebKit, el SW puede interferir con la navegación SPA.
+// No interceptamos navegaciones normales.
 precacheAndRoute(self.__WB_MANIFEST || []);
 
 // No cachear API
 registerRoute(
-  ({ url }) => url.hostname === 'ppam-api-5f8l.onrender.com',
+  ({ url }) => url.pathname.startsWith('/api/'),
   new NetworkOnly()
 );
 

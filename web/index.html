@@ -11,6 +11,14 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // iOS Safari: limpiar SW cacheado que pueda bloquear la app
+      if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+        navigator.serviceWorker.getRegistrations().then(function(regs) {
+          regs.forEach(function(r) { r.unregister(); });
+        });
+      }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
