@@ -1,33 +1,21 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Users, Calendar, FileText, MapPin, Check, X, Bell, BellOff } from 'lucide-react';
+import { Calendar, Check, X, Bell, BellOff } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Badge from '../components/Badge';
 import { getPermissionState, subscribeToPush, unsubscribeFromPush, isPushSupported } from '../services/push';
 
-const statusBadge: Record<string, 'success' | 'warning' | 'danger' | 'default'> = {
-  ABIERTO: 'success', CERRADO: 'default', CANCELADO: 'danger',
-};
-
 export default function DashboardPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Push notifications
   const [pushGranted, setPushGranted] = useState(getPermissionState() === 'granted');
   const [pushSupported] = useState(isPushSupported());
   const [pushDismissed, setPushDismissed] = useState(false);
 
-  const handleEnablePush = async () => {
-    const ok = await subscribeToPush();
-    setPushGranted(ok);
-  };
-
-  const handleDisablePush = async () => {
-    await unsubscribeFromPush();
-    setPushGranted(false);
-  };
+  const handleEnablePush = async () => { const ok = await subscribeToPush(); setPushGranted(ok); };
+  const handleDisablePush = async () => { await unsubscribeFromPush(); setPushGranted(false); };
 
   const { data: stats, isLoading } = useQuery({
     queryKey: ['dashboard'],
@@ -38,217 +26,110 @@ export default function DashboardPage() {
         api.get('/experiences').catch(() => ({ data: [] })),
         api.get('/locations').catch(() => ({ data: [] })),
       ]);
-
-      const getData = (r: PromiseSettledResult<any>) =>
-        r.status === 'fulfilled' ? r.value.data : [];
-
-      const publishers = getData(results[0]);
+      const getData = (r: PromiseSettledResult<any>) => r.status === 'fulfilled' ? r.value.data : [];
       const shifts = getData(results[1]);
       const experiences = getData(results[2]);
-      const locations = getData(results[3]);
-
-      const activeShifts = (Array.isArray(shifts) ? shifts : []).filter((s: any) => s.status === 'ABIERTO').length;
-      const pendingExperiences = (Array.isArray(experiences) ? experiences : []).filter((e: any) => e.status === 'PENDIENTE').length;
-
       return {
-        totalPublishers: (Array.isArray(publishers) ? publishers : []).length,
-        activeShifts,
-        pendingExperiences,
-        totalLocations: (Array.isArray(locations) ? locations : []).length,
+        totalPublishers: (Array.isArray(getData(results[0])) ? getData(results[0]) : []).length,
+        activeShifts: (Array.isArray(shifts) ? shifts : []).filter((s: any) => s.status === 'ABIERTO').length,
+        pendingExperiences: (Array.isArray(experiences) ? experiences : []).filter((e: any) => e.status === 'PENDIENTE').length,
+        totalLocations: (Array.isArray(getData(results[3])) ? getData(results[3]) : []).length,
       };
     },
     refetchInterval: 30000,
   });
 
-  // Turnos asignados al publicador actual
   const { data: myShifts, isLoading: myShiftsLoading } = useQuery({
     queryKey: ['myShifts', user?.publisherId],
     queryFn: async () => {
       if (!user?.publisherId) return [];
-      // Usar endpoint /shifts/my que devuelve asignaciones del usuario autenticado
       const { data } = await api.get('/shifts/my');
-      // La respuesta son ShiftAssignments con shift anidado; extraemos el shift
-      return (data as any[]).map((a: any) => ({
-        ...a.shift,
-        assignmentStatus: a.status,       // estado de MI asignación
-        assignmentId: a.id,               // id de la asignación para responder
-      }));
+      return (data as any[]).map((a: any) => ({ ...a.shift, assignmentStatus: a.status, assignmentId: a.id }));
     },
     enabled: !!user?.publisherId,
-    refetchInterval: 30000,
   });
 
-  // Responder a una asignación (aceptar/rechazar)
   const respondMutation = useMutation({
-    mutationFn: async ({ shiftId, response }: { shiftId: string; response: string }) => {
-      return api.post(`/shifts/${shiftId}/respond`, { response });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['myShifts'] });
-    },
-    onError: (err: any) => {
-      const msg = err?.response?.data?.error || 'Error al responder al turno';
-      const contacts = err?.response?.data?.details;
-      if (contacts && Array.isArray(contacts)) {
-        const contactStr = contacts.map((c: any) =>
-          `• ${c.name} (${c.role}): ${c.phone}`
-        ).join('\n');
-        alert(`${msg}\n\nContactos:\n${contactStr}`);
-      } else {
-        alert(msg);
-      }
-    },
+    mutationFn: async ({ shiftId, response }: { shiftId: string; response: string }) =>
+      api.post(`/shifts/${shiftId}/respond`, { response }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['myShifts'] }),
   });
 
-  // Obtener estado de asignación para el publicador actual
-  function myAssignmentStatus(shift: any): string {
-    return shift.assignmentStatus || 'PENDIENTE';
-  }
-
-  const cards = [
-    { label: 'Publicadores', value: stats?.totalPublishers ?? '--', icon: Users, color: 'text-primary', bg: 'bg-primary/10' },
-    { label: 'Turnos activos', value: stats?.activeShifts ?? '--', icon: Calendar, color: 'text-secondary', bg: 'bg-secondary/10' },
-    { label: 'Exp. pendientes', value: stats?.pendingExperiences ?? '--', icon: FileText, color: 'text-warning', bg: 'bg-orange-100 dark:bg-orange-900/20' },
-    { label: 'Puntos', value: stats?.totalLocations ?? '--', icon: MapPin, color: 'text-info', bg: 'bg-blue-100 dark:bg-blue-900/20' },
-  ];
+  const statusBadge: Record<string, 'success' | 'warning' | 'danger' | 'default'> = {
+    ABIERTO: 'success', CERRADO: 'default', CANCELADO: 'danger',
+  };
 
   return (
     <div>
       <h2 className="text-2xl font-bold text-text-primary mb-6">Inicio</h2>
 
-      {/* Banner de notificaciones push */}
       {pushSupported && !pushGranted && !pushDismissed && (
         <div className="mb-6 p-4 bg-primary/10 border border-primary/20 rounded-xl flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <Bell size={20} className="text-primary" />
-            <span className="text-sm text-text-primary">
-              Activa las notificaciones para recibir alertas de turnos al instante
-            </span>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <button onClick={handleEnablePush}
-              className="px-3 py-1.5 text-xs font-medium bg-primary text-white rounded-lg hover:bg-primary-light transition-colors">
-              Activar
-            </button>
-            <button onClick={() => setPushDismissed(true)}
-              className="p-1.5 rounded-lg hover:bg-surface-hover text-text-muted">
-              <X size={16} />
-            </button>
+          <div className="flex items-center gap-3"><Bell size={20} className="text-primary" /><span className="text-sm">Activa notificaciones</span></div>
+          <div className="flex items-center gap-2">
+            <button onClick={handleEnablePush} className="px-3 py-1.5 text-xs font-medium bg-primary text-white rounded-lg">Activar</button>
+            <button onClick={() => setPushDismissed(true)} className="p-1.5"><X size={16} /></button>
           </div>
         </div>
       )}
       {pushGranted && (
         <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <Bell size={20} className="text-success" />
-            <span className="text-sm text-text-primary">Notificaciones activadas</span>
-          </div>
-          <button onClick={handleDisablePush}
-            className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-text-muted border border-border rounded-lg hover:bg-surface-hover transition-colors">
-            <BellOff size={14} /> Desactivar
-          </button>
+          <div className="flex items-center gap-3"><Bell size={20} className="text-success" /><span className="text-sm">Notificaciones activadas</span></div>
+          <button onClick={handleDisablePush} className="flex items-center gap-1 px-3 py-1.5 text-xs border rounded-lg"><BellOff size={14} /> Desactivar</button>
         </div>
       )}
 
       {isLoading ? (
-        <div className="text-text-muted">Cargando estadísticas...</div>
+        <p className="text-text-muted">Cargando...</p>
       ) : (
-        <>
-          {user?.role !== 'PUBLICADOR' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-              {cards.map((card) => (
-              <div key={card.label} className="bg-surface rounded-xl p-6 border border-border shadow-sm">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-text-muted text-sm">{card.label}</p>
-                  <div className={`p-2 rounded-lg ${card.bg}`}>
-                    <card.icon size={20} className={card.color} />
-                  </div>
-                </div>
-                <p className={`text-3xl font-bold ${card.color}`}>{card.value}</p>
-              </div>
-            ))}
-          </div>
-          )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {[{ label: 'Publicadores', value: stats?.totalPublishers ?? '--', color: 'text-primary' },
+            { label: 'Turnos activos', value: stats?.activeShifts ?? '--', color: 'text-secondary' },
+            { label: 'Exp. pendientes', value: stats?.pendingExperiences ?? '--', color: 'text-warning' },
+            { label: 'Puntos', value: stats?.totalLocations ?? '--', color: 'text-info' }].map(c => (
+            <div key={c.label} className="bg-surface rounded-xl p-6 border border-border shadow-sm">
+              <p className="text-text-muted text-sm">{c.label}</p>
+              <p className={`text-3xl font-bold ${c.color}`}>{c.value}</p>
+            </div>
+          ))}
+        </div>
+      )}
 
-          {/* Mis turnos asignados */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-text-primary mb-4">Mis turnos</h3>
-            {myShiftsLoading ? (
-              <p className="text-text-muted">Cargando turnos...</p>
-            ) : !myShifts?.length ? (
-              <p className="text-text-muted bg-surface rounded-xl p-6 border border-border text-center">
-                No tienes turnos asignados
-              </p>
-            ) : (
-              <div className="bg-surface rounded-xl border border-border overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border bg-background">
-                      <th className="text-left px-4 py-3 text-text-muted font-medium">Fecha</th>
-                      <th className="text-left px-4 py-3 text-text-muted font-medium">Horario</th>
-                      <th className="text-left px-4 py-3 text-text-muted font-medium hidden sm:table-cell">Punto</th>
-                      <th className="text-left px-4 py-3 text-text-muted font-medium">Estado</th>
-                      <th className="text-left px-4 py-3 text-text-muted font-medium">Acción</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {myShifts.map((s: any) => {
-                      const myStatus = myAssignmentStatus(s);
-                      const isPending = myStatus === 'PENDIENTE';
-                      return (
-                      <tr key={s.id} className="border-b border-border last:border-0 hover:bg-background/50">
-                        <td className="px-4 py-3 text-text-primary">
-                          {new Date(s.date).toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', month: 'short' })}
-                        </td>
-                        <td className="px-4 py-3 text-text-primary">{s.timeSlot?.name}</td>
-                        <td className="px-4 py-3 text-text-secondary hidden sm:table-cell">{s.location?.name}</td>
-                        <td className="px-4 py-3">
-                          <Badge variant={statusBadge[s.status] || 'default'}>{s.status}</Badge>
-                          {myStatus !== 'PENDIENTE' && (
-                            <span className={`ml-1.5 text-xs ${myStatus === 'ACEPTADO' ? 'text-success' : 'text-danger'}`}>
-                              · {myStatus === 'ACEPTADO' ? 'Aceptado' : 'Rechazado'}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          {isPending ? (
-                            <div className="flex gap-1">
-                              <button
-                                onClick={() => respondMutation.mutate({ shiftId: s.id, response: 'ACEPTADO' })}
-                                disabled={respondMutation.isPending}
-                                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-white bg-success rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
-                              >
-                                <Check size={14} /> Aceptar
-                              </button>
-                              <button
-                                onClick={() => respondMutation.mutate({ shiftId: s.id, response: 'RECHAZADO' })}
-                                disabled={respondMutation.isPending}
-                                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-white bg-danger rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
-                              >
-                                <X size={14} /> Rechazar
-                              </button>
-                            </div>
-                          ) : myStatus === 'ACEPTADO' ? (
-                            <button
-                              onClick={() => respondMutation.mutate({ shiftId: s.id, response: 'RECHAZADO' })}
-                              disabled={respondMutation.isPending}
-                              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-danger border border-danger rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
-                            >
-                              <X size={14} /> Rechazar
-                            </button>
-                          ) : (
-                            <span className="text-xs text-text-muted">—</span>
-                          )}
-                        </td>
-                      </tr>
-                    )})}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
-        </>
+      <h3 className="text-lg font-semibold text-text-primary mb-4">Mis turnos</h3>
+      {myShiftsLoading ? <p className="text-text-muted">Cargando...</p>
+      : !myShifts?.length ? <p className="text-text-muted bg-surface rounded-xl p-6 border text-center">No tienes turnos asignados</p>
+      : (
+        <div className="bg-surface rounded-xl border overflow-hidden">
+          <table className="w-full text-sm">
+            <thead><tr className="border-b bg-background">
+              <th className="text-left px-4 py-3 font-medium">Fecha</th>
+              <th className="text-left px-4 py-3 font-medium">Horario</th>
+              <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">Punto</th>
+              <th className="text-left px-4 py-3 font-medium">Estado</th>
+              <th className="text-left px-4 py-3 font-medium">Acción</th>
+            </tr></thead>
+            <tbody>{myShifts.map((s: any) => {
+              const myStatus = s.assignmentStatus || 'PENDIENTE';
+              return (
+                <tr key={s.id} className="border-b hover:bg-background/50">
+                  <td className="px-4 py-3">{new Date(s.date).toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', month: 'short' })}</td>
+                  <td className="px-4 py-3">{s.timeSlot?.name}</td>
+                  <td className="px-4 py-3 hidden sm:table-cell">{s.location?.name}</td>
+                  <td className="px-4 py-3"><Badge variant={statusBadge[s.status] || 'default'}>{s.status}</Badge></td>
+                  <td className="px-4 py-3">
+                    {myStatus === 'PENDIENTE' ? (
+                      <div className="flex gap-1">
+                        <button onClick={() => respondMutation.mutate({ shiftId: s.id, response: 'ACEPTADO' })}
+                          className="px-2 py-1 text-xs text-white bg-success rounded-md"><Check size={14} /> Aceptar</button>
+                        <button onClick={() => respondMutation.mutate({ shiftId: s.id, response: 'RECHAZADO' })}
+                          className="px-2 py-1 text-xs text-white bg-danger rounded-md"><X size={14} /> Rechazar</button>
+                      </div>
+                    ) : <span className="text-xs text-text-muted">—</span>}
+                  </td>
+                </tr>
+              )})}</tbody>
+          </table>
+        </div>
       )}
     </div>
   );
