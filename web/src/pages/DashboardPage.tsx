@@ -10,8 +10,8 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const [pushGranted, setPushGranted] = useState(getPermissionState() === 'granted');
-  const [pushSupported] = useState(isPushSupported());
+  const [pushGranted, setPushGranted] = useState(() => { try { return getPermissionState() === 'granted'; } catch { return false; } });
+  const [pushSupported] = useState(() => { try { return isPushSupported(); } catch { return false; } });
   const [pushDismissed, setPushDismissed] = useState(false);
 
   const handleEnablePush = async () => { const ok = await subscribeToPush(); setPushGranted(ok); };
@@ -37,6 +37,7 @@ export default function DashboardPage() {
       };
     },
     refetchInterval: 30000,
+    retry: false,
   });
 
   const { data: myShifts, isLoading: myShiftsLoading } = useQuery({
@@ -47,6 +48,7 @@ export default function DashboardPage() {
       return (data as any[]).map((a: any) => ({ ...a.shift, assignmentStatus: a.status, assignmentId: a.id }));
     },
     enabled: !!user?.publisherId,
+    retry: false,
   });
 
   const respondMutation = useMutation({
