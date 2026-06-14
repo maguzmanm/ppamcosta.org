@@ -83,7 +83,7 @@ export default function DashboardPage() {
 
       {isLoading ? (
         <p className="text-text-muted">Cargando...</p>
-      ) : (
+      ) : user?.role !== 'PUBLICADOR' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {[{ label: 'Publicadores', value: stats?.totalPublishers ?? '--', color: 'text-primary' },
             { label: 'Turnos activos', value: stats?.activeShifts ?? '--', color: 'text-secondary' },
@@ -95,7 +95,7 @@ export default function DashboardPage() {
             </div>
           ))}
         </div>
-      )}
+      ) : null}
 
       <h3 className="text-lg font-semibold text-text-primary mb-4">Mis turnos</h3>
       {myShiftsLoading ? <p className="text-text-muted">Cargando...</p>
