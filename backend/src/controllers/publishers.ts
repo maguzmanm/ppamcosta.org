@@ -279,7 +279,7 @@ export async function getAvailableForShift(req: Request, res: Response, next: Ne
 
 export async function getAbsences(req: Request, res: Response, next: NextFunction) {
   try {
-    const { publisherId } = req.params;
+    const { id: publisherId } = req.params;
     const absences = await prisma.absence.findMany({
       where: { publisherId },
       orderBy: { startDate: 'desc' },
@@ -290,7 +290,7 @@ export async function getAbsences(req: Request, res: Response, next: NextFunctio
 
 export async function createAbsence(req: Request, res: Response, next: NextFunction) {
   try {
-    const { publisherId } = req.params;
+    const { id: publisherId } = req.params;
     const { startDate, endDate, reason, notes } = req.body;
 
     if (!startDate || !endDate) {
@@ -312,7 +312,7 @@ export async function createAbsence(req: Request, res: Response, next: NextFunct
 
 export async function deleteAbsence(req: Request, res: Response, next: NextFunction) {
   try {
-    const { publisherId, absenceId } = req.params;
+    const { id: publisherId, absenceId } = req.params;
     await prisma.absence.deleteMany({
       where: { id: absenceId, publisherId },
     });
