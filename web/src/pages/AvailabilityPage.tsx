@@ -337,8 +337,8 @@ export default function AvailabilityPage() {
                 {absences
                   .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
                   .map((abs) => {
-                    const start = new Date(abs.startDate + 'T00:00:00');
-                    const end = new Date(abs.endDate + 'T00:00:00');
+                    const start = new Date(abs.startDate);
+                    const end = new Date(abs.endDate);
                     const hoy = new Date();
                     hoy.setHours(0, 0, 0, 0);
                     const activa = end >= hoy;
