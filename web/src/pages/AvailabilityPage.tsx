@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Save } from 'lucide-react';
+import { Save, Calendar, Trash2, Plus } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import type { Publisher, TimeSlot, Availability } from '../types';
@@ -70,6 +70,57 @@ export default function AvailabilityPage() {
     },
     onError: (err: any) => {
       setMessage('❌ ' + (err.response?.data?.error || 'Error al guardar'));
+    },
+  });
+
+  // ---- ausencias / vacaciones ----
+  const [showAbsenceForm, setShowAbsenceForm] = useState(false);
+  const [absenceStart, setAbsenceStart] = useState('');
+  const [absenceEnd, setAbsenceEnd] = useState('');
+  const [absenceReason, setAbsenceReason] = useState('Vacaciones');
+  const [absenceNotes, setAbsenceNotes] = useState('');
+  const [absenceError, setAbsenceError] = useState('');
+
+  const { data: absences } = useQuery({
+    queryKey: ['absences', selectedPublisher],
+    queryFn: async () => {
+      const { data } = await api.get(`/publishers/${selectedPublisher}/absences`);
+      return data as { id: string; startDate: string; endDate: string; reason?: string; notes?: string }[];
+    },
+    enabled: !!selectedPublisher,
+  });
+
+  const createAbsenceMutation = useMutation({
+    mutationFn: async () => {
+      await api.post(`/publishers/${selectedPublisher}/absences`, {
+        startDate: absenceStart,
+        endDate: absenceEnd,
+        reason: absenceReason,
+        notes: absenceNotes || undefined,
+      });
+    },
+    onSuccess: () => {
+      setShowAbsenceForm(false);
+      setAbsenceStart('');
+      setAbsenceEnd('');
+      setAbsenceReason('Vacaciones');
+      setAbsenceNotes('');
+      setAbsenceError('');
+      queryClient.invalidateQueries({ queryKey: ['absences', selectedPublisher] });
+      queryClient.invalidateQueries({ queryKey: ['publishers'] });
+    },
+    onError: (err: any) => {
+      setAbsenceError(err.response?.data?.error || 'Error al guardar ausencia');
+    },
+  });
+
+  const deleteAbsenceMutation = useMutation({
+    mutationFn: async (absenceId: string) => {
+      await api.delete(`/publishers/${selectedPublisher}/absences/${absenceId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['absences', selectedPublisher] });
+      queryClient.invalidateQueries({ queryKey: ['publishers'] });
     },
   });
 
@@ -190,6 +241,152 @@ export default function AvailabilityPage() {
               <span className={`text-sm ${message.startsWith('✅') ? 'text-success' : 'text-danger'}`}>
                 {message}
               </span>
+            )}
+          </div>
+
+          {/* ---- AUSENCIAS / VACACIONES ---- */}
+          <div className="bg-surface rounded-xl border border-border p-6 mt-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-text-primary flex items-center gap-2">
+                <Calendar size={20} className="text-primary" />
+                Ausencias y vacaciones
+              </h3>
+              {!showAbsenceForm && (
+                <button
+                  onClick={() => { setShowAbsenceForm(true); setAbsenceError(''); }}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-primary-light transition-colors text-sm font-medium"
+                >
+                  <Plus size={16} />
+                  Añadir
+                </button>
+              )}
+            </div>
+
+            {/* Formulario */}
+            {showAbsenceForm && (
+              <div className="bg-background rounded-lg border border-border p-4 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                  <div>
+                    <label className="block text-xs font-medium text-text-secondary mb-1">Fecha inicio</label>
+                    <input
+                      type="date"
+                      value={absenceStart}
+                      onChange={(e) => setAbsenceStart(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-text-secondary mb-1">Fecha fin</label>
+                    <input
+                      type="date"
+                      value={absenceEnd}
+                      onChange={(e) => setAbsenceEnd(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                  <div>
+                    <label className="block text-xs font-medium text-text-secondary mb-1">Motivo</label>
+                    <select
+                      value={absenceReason}
+                      onChange={(e) => setAbsenceReason(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    >
+                      <option value="Vacaciones">Vacaciones</option>
+                      <option value="Enfermedad">Enfermedad</option>
+                      <option value="Personal">Personal</option>
+                      <option value="Otro">Otro</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-text-secondary mb-1">Notas (opcional)</label>
+                    <input
+                      type="text"
+                      value={absenceNotes}
+                      onChange={(e) => setAbsenceNotes(e.target.value)}
+                      placeholder="Ej: viaje, familiar..."
+                      className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                  </div>
+                </div>
+                {absenceError && (
+                  <p className="text-danger text-sm mb-3">{absenceError}</p>
+                )}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => createAbsenceMutation.mutate()}
+                    disabled={!absenceStart || !absenceEnd || createAbsenceMutation.isPending}
+                    className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-light disabled:opacity-50 transition-colors text-sm font-medium"
+                  >
+                    {createAbsenceMutation.isPending ? 'Guardando...' : 'Guardar'}
+                  </button>
+                  <button
+                    onClick={() => { setShowAbsenceForm(false); setAbsenceError(''); }}
+                    className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-text-secondary rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Lista de ausencias */}
+            {absences && absences.length > 0 ? (
+              <div className="space-y-2">
+                {absences
+                  .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+                  .map((abs) => {
+                    const start = new Date(abs.startDate + 'T00:00:00');
+                    const end = new Date(abs.endDate + 'T00:00:00');
+                    const hoy = new Date();
+                    hoy.setHours(0, 0, 0, 0);
+                    const activa = end >= hoy;
+                    const fmt = (d: Date) =>
+                      d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+                    return (
+                      <div
+                        key={abs.id}
+                        className={`flex items-center justify-between px-4 py-2.5 rounded-lg border text-sm ${
+                          activa
+                            ? 'border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20'
+                            : 'border-border bg-surface opacity-60'
+                        }`}
+                      >
+                        <div>
+                          <span className="font-medium text-text-primary">
+                            {fmt(start)} → {fmt(end)}
+                          </span>
+                          {abs.reason && (
+                            <span className="ml-2 text-text-muted">— {abs.reason}</span>
+                          )}
+                          {abs.notes && (
+                            <span className="ml-2 text-text-muted italic">({abs.notes})</span>
+                          )}
+                          {!activa && (
+                            <span className="ml-2 text-xs text-text-muted">(pasada)</span>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => {
+                            if (confirm('¿Eliminar esta ausencia?')) deleteAbsenceMutation.mutate(abs.id);
+                          }}
+                          disabled={deleteAbsenceMutation.isPending}
+                          className="p-1.5 text-text-muted hover:text-danger hover:bg-danger/10 rounded transition-colors"
+                          title="Eliminar ausencia"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    );
+                  })}
+              </div>
+            ) : (
+              !showAbsenceForm && (
+                <p className="text-text-muted text-sm text-center py-4">
+                  No hay periodos de ausencia registrados.
+                </p>
+              )
             )}
           </div>
         </>
