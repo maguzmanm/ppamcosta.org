@@ -337,13 +337,16 @@ export default function AvailabilityPage() {
                 {absences
                   .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
                   .map((abs) => {
-                    const start = new Date(abs.startDate);
-                    const end = new Date(abs.endDate);
-                    const hoy = new Date();
-                    hoy.setHours(0, 0, 0, 0);
-                    const activa = end >= hoy;
-                    const fmt = (d: Date) =>
-                      d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+                    // Extraer la parte de fecha del ISO string para evitar offset de zona horaria
+                    const startStr = abs.startDate.slice(0, 10);
+                    const endStr = abs.endDate.slice(0, 10);
+                    const hoyStr = new Date().toISOString().slice(0, 10);
+                    const activa = endStr >= hoyStr;
+                    const fmt = (s: string) => {
+                      const [y, m, d] = s.split('-');
+                      const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sept', 'oct', 'nov', 'dic'];
+                      return `${parseInt(d)} ${meses[parseInt(m) - 1]} ${y}`;
+                    };
                     return (
                       <div
                         key={abs.id}
@@ -355,7 +358,7 @@ export default function AvailabilityPage() {
                       >
                         <div>
                           <span className="font-medium text-text-primary">
-                            {fmt(start)} → {fmt(end)}
+                            {fmt(startStr)} → {fmt(endStr)}
                           </span>
                           {abs.reason && (
                             <span className="ml-2 text-text-muted">— {abs.reason}</span>
