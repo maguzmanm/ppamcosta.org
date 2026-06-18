@@ -8,6 +8,9 @@ import {
   getAvailability,
   setAvailability,
   getAvailableForShift,
+  getAbsences,
+  createAbsence,
+  deleteAbsence,
 } from '../controllers/publishers';
 import { authenticate } from '../middleware/auth';
 import { authorize, authorizeSelfOrRole } from '../middleware/authorize';
@@ -27,3 +30,8 @@ publisherRouter.delete('/:id', authorize('COORDINADOR'), remove);
 // Disponibilidad
 publisherRouter.get('/:id/availability', authorizeSelfOrRole('COORDINADOR', 'AUXILIAR'), getAvailability);
 publisherRouter.put('/:id/availability', authorizeSelfOrRole('COORDINADOR'), setAvailability);
+
+// Ausencias / Vacaciones
+publisherRouter.get('/:id/absences', authorizeSelfOrRole('COORDINADOR', 'AUXILIAR'), getAbsences);
+publisherRouter.post('/:id/absences', authorizeSelfOrRole('COORDINADOR'), createAbsence);
+publisherRouter.delete('/:id/absences/:absenceId', authorizeSelfOrRole('COORDINADOR'), deleteAbsence);

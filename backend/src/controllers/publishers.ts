@@ -237,6 +237,13 @@ export async function getAvailableForShift(req: Request, res: Response, next: Ne
             timeSlotId: String(timeSlotId),
           },
         },
+        // Excluir los que están de ausencia en esta fecha
+        absences: {
+          none: {
+            startDate: { lte: shiftDate },
+            endDate: { gte: shiftDate },
+          },
+        },
       },
       include: {
         congregation: { select: { id: true, name: true } },
@@ -266,4 +273,49 @@ export async function getAvailableForShift(req: Request, res: Response, next: Ne
   } catch (err) {
     next(err);
   }
+}
+
+// ─── Ausencias / Vacaciones ───
+
+export async function getAbsences(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { publisherId } = req.params;
+    const absences = await prisma.absence.findMany({
+      where: { publisherId },
+      orderBy: { startDate: 'desc' },
+    });
+    res.json(absences);
+  } catch (err) { next(err); }
+}
+
+export async function createAbsence(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { publisherId } = req.params;
+    const { startDate, endDate, reason, notes } = req.body;
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: 'startDate y endDate son requeridos' });
+    }
+
+    const absence = await prisma.absence.create({
+      data: {
+        publisherId,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        reason: reason || null,
+        notes: notes || null,
+      },
+    });
+    res.status(201).json(absence);
+  } catch (err) { next(err); }
+}
+
+export async function deleteAbsence(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { publisherId, absenceId } = req.params;
+    await prisma.absence.deleteMany({
+      where: { id: absenceId, publisherId },
+    });
+    res.json({ message: 'Ausencia eliminada' });
+  } catch (err) { next(err); }
 }

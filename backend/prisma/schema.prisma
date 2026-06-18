@@ -67,6 +67,7 @@ model Publisher {
 
   user           User?
   availabilities Availability[]
+  absences       Absence[]
   shiftAssignments ShiftAssignment[]
   experiences    Experience[]
 
@@ -115,6 +116,20 @@ model Availability {
 
   @@unique([publisherId, timeSlotId, dayOfWeek])
   @@map("availability")
+}
+
+// ─── Ausencias / Vacaciones ───
+model Absence {
+  id          String    @id @default(uuid())
+  publisherId String    @map("publisher_id")
+  publisher   Publisher @relation(fields: [publisherId], references: [id])
+  startDate   DateTime  @map("start_date")
+  endDate     DateTime  @map("end_date")
+  reason      String?   // "Vacaciones", "Enfermedad", "Otro"
+  notes       String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@map("absences")
 }
 
 // ─── Puntos / Ubicaciones (carritos) ───
