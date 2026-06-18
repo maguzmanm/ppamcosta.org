@@ -225,7 +225,9 @@ export async function getAvailableForShift(req: Request, res: Response, next: Ne
       throw new ValidationError('Fecha y franja horaria son requeridos');
     }
 
-    const shiftDate = new Date(String(date));
+    // Construir fecha UTC explícitamente para evitar ambigüedad de zona horaria
+    const [y, m, d] = String(date).split('-').map(Number);
+    const shiftDate = new Date(Date.UTC(y, m - 1, d));
     const dayOfWeek = shiftDate.getUTCDay(); // 0=Dom, 1=Lun, ...
 
     const availablePublishers = await prisma.publisher.findMany({
@@ -297,11 +299,15 @@ export async function createAbsence(req: Request, res: Response, next: NextFunct
       return res.status(400).json({ error: 'startDate y endDate son requeridos' });
     }
 
+    // Construir fechas UTC explícitamente para que coincidan con getAvailableForShift
+    const [sy, sm, sd] = String(startDate).split('-').map(Number);
+    const [ey, em, ed] = String(endDate).split('-').map(Number);
+
     const absence = await prisma.absence.create({
       data: {
         publisherId,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
+        startDate: new Date(Date.UTC(sy, sm - 1, sd)),
+        endDate: new Date(Date.UTC(ey, em - 1, ed)),
         reason: reason || null,
         notes: notes || null,
       },
