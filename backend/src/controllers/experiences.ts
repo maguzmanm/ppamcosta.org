@@ -91,12 +91,39 @@ export async function create(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+// ─── Editar experiencia pendiente (encargado de experiencias / coordinador) ───
+
+export async function update(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.params;
+    const { title, content } = req.body;
+
+    if (!title || !content) throw new ValidationError('Título y contenido son requeridos');
+
+    const experience = await prisma.experience.findUnique({ where: { id } });
+    if (!experience) throw new NotFoundError('Experiencia no encontrada');
+
+    if (experience.status !== 'PENDIENTE') {
+      throw new ValidationError('Solo se pueden editar experiencias pendientes');
+    }
+
+    const updated = await prisma.experience.update({
+      where: { id },
+      data: { title, content },
+    });
+
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+}
+
 // ─── Revisar experiencia (encargado de experiencias / coordinador) ───
 
 export async function review(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
-    const { status, content, reviewNotes } = req.body; // status: APROBADO | RECHAZADO
+    const { status, title, content, reviewNotes } = req.body; // status: APROBADO | RECHAZADO
 
     if (!['APROBADO', 'RECHAZADO'].includes(status)) {
       throw new ValidationError('El estado debe ser APROBADO o RECHAZADO');
@@ -109,6 +136,7 @@ export async function review(req: Request, res: Response, next: NextFunction) {
       where: { id },
       data: {
         status,
+        ...(title && { title }),
         ...(content && { content }),
         reviewNotes,
         reviewedBy: req.user!.userId,
