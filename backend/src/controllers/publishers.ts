@@ -228,6 +228,7 @@ export async function getAvailableForShift(req: Request, res: Response, next: Ne
     // Construir fecha UTC explícitamente para evitar ambigüedad de zona horaria
     const [y, m, d] = String(date).split('-').map(Number);
     const shiftDate = new Date(Date.UTC(y, m - 1, d));
+    const nextDay = new Date(Date.UTC(y, m - 1, d + 1));
     const dayOfWeek = shiftDate.getUTCDay(); // 0=Dom, 1=Lun, ...
 
     const availablePublishers = await prisma.publisher.findMany({
@@ -244,6 +245,17 @@ export async function getAvailableForShift(req: Request, res: Response, next: Ne
           none: {
             startDate: { lte: shiftDate },
             endDate: { gte: shiftDate },
+          },
+        },
+        // Excluir los que YA están asignados a OTRO turno en la MISMA fecha
+        shiftAssignments: {
+          none: {
+            shift: {
+              date: {
+                gte: shiftDate,
+                lt: nextDay,
+              },
+            },
           },
         },
       },
