@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Check, X, FileText, Pencil } from 'lucide-react';
+import { Check, X, FileText, Pencil, Plus } from 'lucide-react';
 import api from '../services/api';
 import Badge from '../components/Badge';
 import Modal from '../components/Modal';
@@ -15,12 +15,19 @@ export default function ExperiencesPage() {
   const queryClient = useQueryClient();
   const { canManageExperiences } = useAuth();
 
+  // ─── Editar experiencia ───
   const [editModal, setEditModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
   const [rejectNotes, setRejectNotes] = useState('');
   const [showRejectInput, setShowRejectInput] = useState(false);
+
+  // ─── Crear experiencia ───
+  const [createModal, setCreateModal] = useState(false);
+  const [createTitle, setCreateTitle] = useState('');
+  const [createContent, setCreateContent] = useState('');
+  const [createMessage, setCreateMessage] = useState('');
 
   const { data: experiences, isLoading } = useQuery({
     queryKey: ['experiences'],
@@ -42,6 +49,21 @@ export default function ExperiencesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['experiences'] });
       closeEditModal();
+    },
+  });
+
+  const createMutation = useMutation({
+    mutationFn: ({ title, content }: { title: string; content: string }) =>
+      api.post('/experiences', { title, content }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['experiences'] });
+      setCreateModal(false);
+      setCreateTitle('');
+      setCreateContent('');
+      setCreateMessage('');
+    },
+    onError: (err: any) => {
+      setCreateMessage('❌ ' + (err.response?.data?.error || 'Error al crear'));
     },
   });
 
@@ -85,6 +107,17 @@ export default function ExperiencesPage() {
   return (
     <div>
       <h2 className="text-2xl font-bold text-text-primary mb-6">Experiencias</h2>
+
+      {/* Botón crear */}
+      <div className="mb-6">
+        <button
+          onClick={() => { setCreateModal(true); setCreateMessage(''); }}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-light transition-colors text-sm font-medium"
+        >
+          <Plus size={18} />
+          Nueva experiencia
+        </button>
+      </div>
 
       {isLoading ? (
         <p className="text-text-muted">Cargando experiencias...</p>
@@ -194,6 +227,66 @@ export default function ExperiencesPage() {
             </button>
             <button
               onClick={closeEditModal}
+              className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-text-secondary rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm ml-auto"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal de creación */}
+      <Modal
+        open={createModal}
+        onClose={() => { setCreateModal(false); setCreateMessage(''); }}
+        title="Nueva experiencia"
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-1">Título</label>
+            <input
+              type="text"
+              value={createTitle}
+              onChange={(e) => setCreateTitle(e.target.value)}
+              placeholder="Ej: Una experiencia en la predicación..."
+              className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-1">Contenido</label>
+            <textarea
+              value={createContent}
+              onChange={(e) => setCreateContent(e.target.value)}
+              rows={8}
+              placeholder="Describe tu experiencia aquí..."
+              className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y"
+            />
+          </div>
+
+          {createMessage && (
+            <p className={`text-sm ${createMessage.startsWith('✅') ? 'text-success' : 'text-danger'}`}>
+              {createMessage}
+            </p>
+          )}
+
+          <div className="flex items-center gap-2 pt-2 border-t border-border">
+            <button
+              onClick={() => {
+                if (!createTitle.trim() || !createContent.trim()) {
+                  setCreateMessage('❌ Título y contenido son requeridos');
+                  return;
+                }
+                createMutation.mutate({ title: createTitle.trim(), content: createContent.trim() });
+              }}
+              disabled={createMutation.isPending}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-light disabled:opacity-50 transition-colors text-sm font-medium"
+            >
+              <Plus size={16} />
+              {createMutation.isPending ? 'Creando...' : 'Crear experiencia'}
+            </button>
+            <button
+              onClick={() => { setCreateModal(false); setCreateMessage(''); }}
               className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-text-secondary rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm ml-auto"
             >
               Cancelar
