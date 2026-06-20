@@ -55,11 +55,11 @@ export default function ShiftsPage() {
 
   // Cargar publicadores disponibles cuando fecha, horario y punto están seleccionados
   const { data: availablePublishers } = useQuery({
-    queryKey: ['availablePublishers', form.date, form.timeSlotId, form.locationId],
+    queryKey: ['availablePublishers', form.date, form.timeSlotId, form.locationId, editing?.id],
     queryFn: async () => {
-      const { data } = await api.get('/publishers/available-for-shift', {
-        params: { date: form.date, timeSlotId: form.timeSlotId, locationId: form.locationId },
-      });
+      const params: any = { date: form.date, timeSlotId: form.timeSlotId, locationId: form.locationId };
+      if (editing?.id) params.excludeShiftId = editing.id;
+      const { data } = await api.get('/publishers/available-for-shift', { params });
       return data as AvailablePublisher[];
     },
     enabled: !!(form.date && form.timeSlotId && form.locationId),

@@ -220,7 +220,7 @@ export async function setAvailability(req: Request, res: Response, next: NextFun
 
 export async function getAvailableForShift(req: Request, res: Response, next: NextFunction) {
   try {
-    const { date, timeSlotId } = req.query;
+    const { date, timeSlotId, excludeShiftId } = req.query;
     if (!date || !timeSlotId) {
       throw new ValidationError('Fecha y franja horaria son requeridos');
     }
@@ -230,6 +230,14 @@ export async function getAvailableForShift(req: Request, res: Response, next: Ne
     const shiftDate = new Date(Date.UTC(y, m - 1, d));
     const nextDay = new Date(Date.UTC(y, m - 1, d + 1));
     const dayOfWeek = shiftDate.getUTCDay(); // 0=Dom, 1=Lun, ...
+
+    // Filtro de turnos en el mismo día — si se está editando un turno, se excluye ese turno
+    const sameDayShiftFilter: any = {
+      date: { gte: shiftDate, lt: nextDay },
+    };
+    if (excludeShiftId) {
+      sameDayShiftFilter.id = { not: String(excludeShiftId) };
+    }
 
     const availablePublishers = await prisma.publisher.findMany({
       where: {
@@ -250,12 +258,7 @@ export async function getAvailableForShift(req: Request, res: Response, next: Ne
         // Excluir los que YA están asignados a OTRO turno en la MISMA fecha
         shiftAssignments: {
           none: {
-            shift: {
-              date: {
-                gte: shiftDate,
-                lt: nextDay,
-              },
-            },
+            shift: sameDayShiftFilter,
           },
         },
       },
