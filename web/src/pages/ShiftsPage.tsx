@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, X } from 'lucide-react';
 import api from '../services/api';
 import DataTable from '../components/DataTable';
 import Modal from '../components/Modal';
@@ -111,8 +111,8 @@ export default function ShiftsPage() {
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`/shifts/${id}`),
+  const cancelMutation = useMutation({
+    mutationFn: (id: string) => api.put(`/shifts/${id}`, { status: 'CANCELADO' }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['shifts'] }),
   });
 
@@ -178,8 +178,8 @@ export default function ShiftsPage() {
                 <button onClick={(e) => { e.stopPropagation(); openEdit(s); }} className="p-1.5 rounded hover:bg-surface-hover text-text-muted hover:text-primary">
                   <Pencil size={16} />
                 </button>
-                <button onClick={(e) => { e.stopPropagation(); if (confirm('¿Eliminar este turno?')) deleteMutation.mutate(s.id); }} className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-text-muted hover:text-danger">
-                  <Trash2 size={16} />
+                <button onClick={(e) => { e.stopPropagation(); if (confirm('¿Cancelar este turno? Pasará a estado CANCELADO.')) cancelMutation.mutate(s.id); }} className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-text-muted hover:text-danger">
+                  <X size={16} />
                 </button>
               </div>
             ),
