@@ -57,7 +57,7 @@ export async function getById(req: Request, res: Response, next: NextFunction) {
 
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
-    const { firstName, lastName, marriedLastName, designations, gender, congregationId, locationId, phone, email, notes, password, role, maritalStatus, spouseId } = req.body;
+    const { firstName, lastName, marriedLastName, designations, gender, congregationId, locationId, phone, email, notes, password, role, maritalStatus, spouseId, spouseIsExternal, spouseName } = req.body;
     if (!firstName || !lastName || !congregationId) {
       throw new ValidationError('Nombre, apellido y congregación son requeridos');
     }
@@ -78,6 +78,8 @@ export async function create(req: Request, res: Response, next: NextFunction) {
         gender: gender || null,
         maritalStatus: maritalStatus || null,
         spouseId: spouseId || null,
+        spouseIsExternal: spouseIsExternal === true || spouseIsExternal === 'true',
+        spouseName: spouseName || null,
         congregationId,
         locationId: locationId || null,
         phone, email, notes,
@@ -115,7 +117,7 @@ export async function create(req: Request, res: Response, next: NextFunction) {
 
 export async function update(req: Request, res: Response, next: NextFunction) {
   try {
-    const { firstName, lastName, marriedLastName, designations, gender, congregationId, locationId, phone, email, notes, isActive, role, password, maritalStatus, spouseId } = req.body;
+    const { firstName, lastName, marriedLastName, designations, gender, congregationId, locationId, phone, email, notes, isActive, role, password, maritalStatus, spouseId, spouseIsExternal, spouseName } = req.body;
 
     if (locationId) {
       const loc = await prisma.location.findUnique({ where: { id: locationId } });
@@ -148,6 +150,8 @@ export async function update(req: Request, res: Response, next: NextFunction) {
         gender: gender !== undefined ? (gender || null) : undefined,
         maritalStatus: maritalStatus !== undefined ? (maritalStatus || null) : undefined,
         spouseId: spouseId !== undefined ? (spouseId || null) : undefined,
+        spouseIsExternal: spouseIsExternal !== undefined ? (spouseIsExternal === true || spouseIsExternal === 'true') : undefined,
+        spouseName: spouseName !== undefined ? (spouseName || null) : undefined,
         congregationId, locationId: locationId !== undefined ? (locationId || null) : undefined, phone, email, notes, isActive,
       },
       include: { congregation: { include: { circuit: true } }, user: { select: { id: true, email: true, role: true } } },

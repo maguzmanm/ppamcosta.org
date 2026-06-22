@@ -54,7 +54,9 @@ model Publisher {
   designations   String?       // JSON: ["ANCIANO","PRECURSOR_REGULAR",...]
   gender         String?       // "M" o "F"
   maritalStatus  String?       @map("marital_status") // CASADO, SOLTERO, DIVORCIADO, SEPARADO, VIUDO
-  spouseId       String?       @map("spouse_id") // ID del cónyuge (relación manejada en aplicación)
+  spouseId       String?       @map("spouse_id") // ID del cónyuge en PPAM (si participa)
+  spouseIsExternal Boolean?    @default(false) @map("spouse_is_external") // true si el cónyuge no participa
+  spouseName     String?       @map("spouse_name") // nombre del cónyuge externo
   // displayName: si marriedLastName existe → "firstName de marriedLastName"
   congregationId String         @map("congregation_id")
   congregation   Congregation   @relation(fields: [congregationId], references: [id])

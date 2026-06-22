@@ -63,6 +63,8 @@ export default function PublishersPage() {
     gender: '',
     maritalStatus: '',
     spouseId: '',
+    spouseIsExternal: false,
+    spouseName: '',
     congregationId: '',
     locationId: '',
     role: 'PUBLICADOR' as UserRole,
@@ -140,6 +142,8 @@ export default function PublishersPage() {
       gender: '',
       maritalStatus: '',
       spouseId: '',
+      spouseIsExternal: false,
+      spouseName: '',
       congregationId: '',
       locationId: '',
       role: 'PUBLICADOR',
@@ -177,6 +181,8 @@ export default function PublishersPage() {
       gender: p.gender || '',
       maritalStatus: (p as any).maritalStatus || '',
       spouseId: (p as any).spouseId || '',
+      spouseIsExternal: (p as any).spouseIsExternal || false,
+      spouseName: (p as any).spouseName || '',
       congregationId: p.congregationId,
       locationId: (p as any).locationId || '',
       role: (p.user?.role as UserRole) || 'PUBLICADOR',
@@ -325,26 +331,41 @@ export default function PublishersPage() {
               <label className="block text-sm font-medium text-text-secondary mb-1">
                 Cónyuge ({form.gender === 'M' ? 'mujer' : 'hombre'})
               </label>
-              <select value={form.spouseId} onChange={(e) => {
-                const selected = (availableSpouses || []).find(s => s.id === e.target.value);
-                setForm({
-                  ...form,
-                  spouseId: e.target.value,
-                  // Si es mujer casada, auto-completar apellido de casada con el apellido del esposo
-                  marriedLastName: (form.gender === 'F' && selected) ? selected.lastName : form.marriedLastName,
-                });
-              }}
-                className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm">
-                <option value="">Seleccionar</option>
-                {(availableSpouses || []).map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.firstName} {s.lastName}{s.marriedLastName ? ` (${s.marriedLastName})` : ''}
-                  </option>
-                ))}
-              </select>
-              {availableSpouses && availableSpouses.length === 0 && (
-                <p className="text-text-muted text-xs mt-1">No hay {form.gender === 'M' ? 'mujeres' : 'hombres'} disponibles sin cónyuge</p>
+              {!form.spouseIsExternal ? (
+                <select value={form.spouseId} onChange={(e) => {
+                  const selected = (availableSpouses || []).find(s => s.id === e.target.value);
+                  setForm({
+                    ...form,
+                    spouseId: e.target.value,
+                    marriedLastName: (form.gender === 'F' && selected) ? selected.lastName : form.marriedLastName,
+                  });
+                }}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm">
+                  <option value="">Seleccionar</option>
+                  {(availableSpouses || []).map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.firstName} {s.lastName}{s.marriedLastName ? ` (${s.marriedLastName})` : ''}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={form.spouseName}
+                  onChange={(e) => setForm({ ...form, spouseName: e.target.value })}
+                  placeholder={`Nombre del ${form.gender === 'M' ? 'esposo' : 'esposa'}`}
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
+                />
               )}
+              <label className="flex items-center gap-2 mt-2 text-sm text-text-secondary cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.spouseIsExternal}
+                  onChange={(e) => setForm({ ...form, spouseIsExternal: e.target.checked, spouseId: e.target.checked ? '' : form.spouseId })}
+                  className="rounded border-border"
+                />
+                {form.gender === 'M' ? 'Esposa' : 'Esposo'} no participa en PPAM
+              </label>
             </div>
           )}
           <div>
