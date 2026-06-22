@@ -99,11 +99,12 @@ export default function PublishersPage() {
 
   // Cónyuges disponibles del género opuesto (solo cuando es CASADO y tiene género)
   const { data: availableSpouses } = useQuery({
-    queryKey: ['availableSpouses', form.gender],
+    queryKey: ['availableSpouses', form.gender, form.spouseId],
     queryFn: async () => {
-      const { data } = await api.get('/publishers/available-spouses', {
-        params: { gender: form.gender, excludeId: editing?.id || undefined },
-      });
+      const params: any = { gender: form.gender, excludeId: editing?.id || undefined };
+      // Al editar, incluir al cónyuge actual aunque ya esté vinculado
+      if (form.spouseId) params.includeId = form.spouseId;
+      const { data } = await api.get('/publishers/available-spouses', { params });
       return data as { id: string; firstName: string; lastName: string; marriedLastName?: string }[];
     },
     enabled: form.maritalStatus === 'CASADO' && !!form.gender,

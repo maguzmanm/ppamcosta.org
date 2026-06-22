@@ -205,7 +205,7 @@ export async function remove(req: Request, res: Response, next: NextFunction) {
 
 export async function availableSpouses(req: Request, res: Response, next: NextFunction) {
   try {
-    const { gender, excludeId } = req.query;
+    const { gender, excludeId, includeId } = req.query;
     // Buscar el género opuesto
     const targetGender = gender === 'M' ? 'F' : 'M';
 
@@ -213,7 +213,10 @@ export async function availableSpouses(req: Request, res: Response, next: NextFu
       where: {
         gender: targetGender,
         isActive: true,
-        spouseId: null, // sin cónyuge asignado
+        OR: [
+          { spouseId: null },
+          ...(includeId ? [{ id: String(includeId) }] : []),
+        ],
         ...(excludeId ? { id: { not: String(excludeId) } } : {}),
       },
       select: {
