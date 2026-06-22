@@ -156,12 +156,32 @@ export default function LocationsPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">Auxiliar de punto</label>
-            <select value={form.auxiliarIds[0] || ''} onChange={(e) => setForm({ ...form, auxiliarIds: e.target.value ? [e.target.value] : [] })}
+            <label className="block text-sm font-medium text-text-secondary mb-1">Auxiliar de punto 1</label>
+            <select value={form.auxiliarIds[0] || ''} onChange={(e) => {
+              const val = e.target.value;
+              const rest = form.auxiliarIds.slice(1);
+              setForm({ ...form, auxiliarIds: val ? [val, ...rest] : rest });
+            }}
               className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm">
               <option value="">Seleccionar</option>
               {(auxiliares || []).map((p: any) => (
-                <option key={p.id} value={p.user?.id || ''}>{p.firstName} {p.lastName}</option>
+                <option key={p.id} value={p.user?.id || ''} disabled={p.user?.id === form.auxiliarIds[1]}>{p.firstName} {p.lastName}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-1">Auxiliar de punto 2</label>
+            <select value={form.auxiliarIds[1] || ''} onChange={(e) => {
+              const val = e.target.value;
+              const first = form.auxiliarIds[0];
+              setForm({ ...form, auxiliarIds: val ? [first, val] : [first] });
+            }}
+              className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm">
+              <option value="">Seleccionar</option>
+              {(auxiliares || []).map((p: any) => (
+                <option key={p.id} value={p.user?.id || ''} disabled={p.user?.id === form.auxiliarIds[0]}>{p.firstName} {p.lastName}</option>
               ))}
             </select>
           </div>
