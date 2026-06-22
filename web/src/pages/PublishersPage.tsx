@@ -61,6 +61,8 @@ export default function PublishersPage() {
     email: '',
     phone: '',
     gender: '',
+    maritalStatus: '',
+    spouseId: '',
     congregationId: '',
     locationId: '',
     role: 'PUBLICADOR' as UserRole,
@@ -95,6 +97,18 @@ export default function PublishersPage() {
     },
   });
 
+  // Cónyuges disponibles del género opuesto (solo cuando es CASADO y tiene género)
+  const { data: availableSpouses } = useQuery({
+    queryKey: ['availableSpouses', form.gender],
+    queryFn: async () => {
+      const { data } = await api.get('/publishers/available-spouses', {
+        params: { gender: form.gender, excludeId: editing?.id || undefined },
+      });
+      return data as { id: string; firstName: string; lastName: string; marriedLastName?: string }[];
+    },
+    enabled: form.maritalStatus === 'CASADO' && !!form.gender,
+  });
+
   const saveMutation = useMutation({
     mutationFn: async (payload: typeof form & { id?: string }) => {
       if (payload.id) {
@@ -123,6 +137,8 @@ export default function PublishersPage() {
       email: '',
       phone: '',
       gender: '',
+      maritalStatus: '',
+      spouseId: '',
       congregationId: '',
       locationId: '',
       role: 'PUBLICADOR',
@@ -158,6 +174,8 @@ export default function PublishersPage() {
       email: p.email || '',
       phone: p.phone || '',
       gender: p.gender || '',
+      maritalStatus: (p as any).maritalStatus || '',
+      spouseId: (p as any).spouseId || '',
       congregationId: p.congregationId,
       locationId: (p as any).locationId || '',
       role: (p.user?.role as UserRole) || 'PUBLICADOR',
@@ -178,6 +196,10 @@ export default function PublishersPage() {
     }
     const payload: any = { ...form };
     payload.designations = allDesignations.length > 0 ? JSON.stringify(allDesignations) : null;
+    // Si no es casado, no enviar spouseId
+    if (payload.maritalStatus !== 'CASADO') {
+      payload.spouseId = null;
+    }
     delete payload.otherDesignation;
     saveMutation.mutate({ ...payload, id: editing?.id });
   }
@@ -278,13 +300,52 @@ export default function PublishersPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">Género</label>
-            <select value={form.gender} onChange={(e) => setForm({ ...form, gender: e.target.value })}
+            <select value={form.gender} onChange={(e) => setForm({ ...form, gender: e.target.value, spouseId: '' })}
               className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm">
               <option value="">Seleccionar</option>
               <option value="M">Masculino</option>
               <option value="F">Femenino</option>
             </select>
           </div>
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-1">Estado civil</label>
+            <select value={form.maritalStatus} onChange={(e) => setForm({ ...form, maritalStatus: e.target.value, spouseId: e.target.value !== 'CASADO' ? '' : form.spouseId })}
+              className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm">
+              <option value="">Seleccionar</option>
+              <option value="SOLTERO">Soltero/a</option>
+              <option value="CASADO">Casado/a</option>
+              <option value="DIVORCIADO">Divorciado/a</option>
+              <option value="SEPARADO">Separado/a</option>
+              <option value="VIUDO">Viudo/a</option>
+            </select>
+          </div>
+          {form.maritalStatus === 'CASADO' && form.gender && (
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-1">
+                Cónyuge ({form.gender === 'M' ? 'mujer' : 'hombre'})
+              </label>
+              <select value={form.spouseId} onChange={(e) => {
+                const selected = (availableSpouses || []).find(s => s.id === e.target.value);
+                setForm({
+                  ...form,
+                  spouseId: e.target.value,
+                  // Si es mujer casada, auto-completar apellido de casada con el apellido del esposo
+                  marriedLastName: (form.gender === 'F' && selected) ? selected.lastName : form.marriedLastName,
+                });
+              }}
+                className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm">
+                <option value="">Seleccionar</option>
+                {(availableSpouses || []).map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.firstName} {s.lastName}{s.marriedLastName ? ` (${s.marriedLastName})` : ''}
+                  </option>
+                ))}
+              </select>
+              {availableSpouses && availableSpouses.length === 0 && (
+                <p className="text-text-muted text-xs mt-1">No hay {form.gender === 'M' ? 'mujeres' : 'hombres'} disponibles sin cónyuge</p>
+              )}
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">Email</label>
             <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}

@@ -57,7 +57,7 @@ export async function getById(req: Request, res: Response, next: NextFunction) {
 
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
-    const { firstName, lastName, marriedLastName, designations, gender, congregationId, locationId, phone, email, notes, password, role } = req.body;
+    const { firstName, lastName, marriedLastName, designations, gender, congregationId, locationId, phone, email, notes, password, role, maritalStatus, spouseId } = req.body;
     if (!firstName || !lastName || !congregationId) {
       throw new ValidationError('Nombre, apellido y congregación son requeridos');
     }
@@ -71,9 +71,27 @@ export async function create(req: Request, res: Response, next: NextFunction) {
     }
 
     const publisher = await prisma.publisher.create({
-      data: { firstName, lastName, marriedLastName: marriedLastName || null, designations: designations || null, gender: gender || null, congregationId, locationId: locationId || null, phone, email, notes },
+      data: {
+        firstName, lastName,
+        marriedLastName: marriedLastName || null,
+        designations: designations || null,
+        gender: gender || null,
+        maritalStatus: maritalStatus || null,
+        spouseId: spouseId || null,
+        congregationId,
+        locationId: locationId || null,
+        phone, email, notes,
+      },
       include: { congregation: { include: { circuit: true } } },
     });
+
+    // Si se asignó cónyuge, actualizar bidireccionalmente
+    if (spouseId) {
+      await prisma.publisher.update({
+        where: { id: spouseId },
+        data: { spouseId: publisher.id, maritalStatus: 'CASADO' },
+      });
+    }
 
     // Si se proporciona email y contraseña, crear usuario automáticamente
     if (email && password) {
@@ -97,11 +115,28 @@ export async function create(req: Request, res: Response, next: NextFunction) {
 
 export async function update(req: Request, res: Response, next: NextFunction) {
   try {
-    const { firstName, lastName, marriedLastName, designations, gender, congregationId, locationId, phone, email, notes, isActive, role, password } = req.body;
+    const { firstName, lastName, marriedLastName, designations, gender, congregationId, locationId, phone, email, notes, isActive, role, password, maritalStatus, spouseId } = req.body;
 
     if (locationId) {
       const loc = await prisma.location.findUnique({ where: { id: locationId } });
       if (!loc) throw new NotFoundError('Punto no encontrado');
+    }
+
+    // Si cambió el spouseId, limpiar relación anterior y setear bidireccional
+    if (spouseId !== undefined) {
+      const oldPublisher = await prisma.publisher.findUnique({ where: { id: req.params.id } });
+      if (oldPublisher?.spouseId && oldPublisher.spouseId !== spouseId) {
+        await prisma.publisher.update({
+          where: { id: oldPublisher.spouseId },
+          data: { spouseId: null, maritalStatus: null },
+        });
+      }
+      if (spouseId) {
+        await prisma.publisher.update({
+          where: { id: spouseId },
+          data: { spouseId: req.params.id, maritalStatus: 'CASADO' },
+        });
+      }
     }
 
     const publisher = await prisma.publisher.update({
@@ -111,6 +146,8 @@ export async function update(req: Request, res: Response, next: NextFunction) {
         marriedLastName: marriedLastName !== undefined ? (marriedLastName || null) : undefined,
         designations: designations !== undefined ? (designations || null) : undefined,
         gender: gender !== undefined ? (gender || null) : undefined,
+        maritalStatus: maritalStatus !== undefined ? (maritalStatus || null) : undefined,
+        spouseId: spouseId !== undefined ? (spouseId || null) : undefined,
         congregationId, locationId: locationId !== undefined ? (locationId || null) : undefined, phone, email, notes, isActive,
       },
       include: { congregation: { include: { circuit: true } }, user: { select: { id: true, email: true, role: true } } },
@@ -159,6 +196,37 @@ export async function remove(req: Request, res: Response, next: NextFunction) {
       data: { isActive: false },
     });
     res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ─── Cónyuges disponibles ───
+
+export async function availableSpouses(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { gender, excludeId } = req.query;
+    // Buscar el género opuesto
+    const targetGender = gender === 'M' ? 'F' : 'M';
+
+    const available = await prisma.publisher.findMany({
+      where: {
+        gender: targetGender,
+        isActive: true,
+        spouseId: null, // sin cónyuge asignado
+        ...(excludeId ? { id: { not: String(excludeId) } } : {}),
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        marriedLastName: true,
+        gender: true,
+      },
+      orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+    });
+
+    res.json(available);
   } catch (err) {
     next(err);
   }

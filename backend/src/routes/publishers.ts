@@ -8,6 +8,7 @@ import {
   getAvailability,
   setAvailability,
   getAvailableForShift,
+  availableSpouses,
   getAbsences,
   createAbsence,
   deleteAbsence,
@@ -22,6 +23,7 @@ publisherRouter.use(authenticate);
 // CRUD
 publisherRouter.get('/', authorize('COORDINADOR', 'AUXILIAR', 'ENCARGADO_PUNTO', 'AUXILIAR_PUNTO'), list);
 publisherRouter.get('/available-for-shift', authorize('COORDINADOR', 'ENCARGADO_PUNTO', 'AUXILIAR_PUNTO'), getAvailableForShift);
+publisherRouter.get('/available-spouses', authorize('COORDINADOR'), availableSpouses);
 publisherRouter.get('/:id', authorize('COORDINADOR', 'AUXILIAR', 'ENCARGADO_PUNTO', 'AUXILIAR_PUNTO'), getById);
 publisherRouter.post('/', authorize('COORDINADOR'), create);
 publisherRouter.put('/:id', authorize('COORDINADOR'), update);
