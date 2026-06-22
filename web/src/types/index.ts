@@ -27,6 +27,8 @@ export interface Publisher {
   marriedLastName?: string;
   designations?: string;
   gender?: string;
+  maritalStatus?: string;
+  spouseId?: string | null;
   congregationId: string;
   congregation?: { id: string; name: string; circuit?: { id: string; name: string } };
   phone?: string;

@@ -29,8 +29,6 @@ function formatLastAssignment(p: any): string {
 
 interface AvailablePublisher extends Publisher {
   shiftAssignments?: { assignedAt: string }[];
-  gender?: string;
-  spouseId?: string | null;
 }
 
 export default function ShiftsPage() {
@@ -76,7 +74,9 @@ export default function ShiftsPage() {
   const publisher1 = (availablePublishers || []).find(p => p.id === form.publisher1Id);
   const filteredForPublisher2 = (availablePublishers || []).filter(p => {
     if (p.id === form.publisher1Id) return false;
-    if (!publisher1) return true;
+    // Si no hay publicador 1 o no tiene género definido, mostrar todos
+    if (!publisher1 || !publisher1.gender) return true;
+    // Mismo género que publisher1, o es su cónyuge
     return p.gender === publisher1.gender || p.id === publisher1.spouseId;
   });
 
