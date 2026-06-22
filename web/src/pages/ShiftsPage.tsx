@@ -26,6 +26,8 @@ function formatLastAssignment(p: any): string {
 
 interface AvailablePublisher extends Publisher {
   shiftAssignments?: { assignedAt: string }[];
+  gender?: string;
+  spouseId?: string | null;
 }
 
 export default function ShiftsPage() {
@@ -66,6 +68,14 @@ export default function ShiftsPage() {
   });
 
   const canSeePublishers = !!(form.date && form.timeSlotId && form.locationId);
+
+  // Filtrar publicador 2: mismo género que publicador 1 o su cónyuge
+  const publisher1 = (availablePublishers || []).find(p => p.id === form.publisher1Id);
+  const filteredForPublisher2 = (availablePublishers || []).filter(p => {
+    if (p.id === form.publisher1Id) return false;
+    if (!publisher1) return true;
+    return p.gender === publisher1.gender || p.id === publisher1.spouseId;
+  });
 
   const createMutation = useMutation({
     mutationFn: async (payload: typeof form) => {
@@ -247,12 +257,17 @@ export default function ShiftsPage() {
                 className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
               >
                 <option value="">-- Seleccionar --</option>
-                {(availablePublishers || []).map((p) => (
-                  <option key={p.id} value={p.id} disabled={p.id === form.publisher1Id}>
+                {filteredForPublisher2.map((p) => (
+                  <option key={p.id} value={p.id}>
                     {formatName(p)} — {formatLastAssignment(p)}
                   </option>
                 ))}
               </select>
+              {publisher1 && filteredForPublisher2.length === 0 && (
+                <p className="text-text-muted text-xs mt-1">
+                  No hay publicadores del mismo género ni cónyuge disponibles
+                </p>
+              )}
             </div>
           </div>
         )}
