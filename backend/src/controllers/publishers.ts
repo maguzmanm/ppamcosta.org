@@ -303,8 +303,10 @@ export async function getAvailableForShift(req: Request, res: Response, next: Ne
     const dayOfWeek = shiftDate.getUTCDay(); // 0=Dom, 1=Lun, ...
 
     // Filtro de turnos en el mismo día — si se está editando un turno, se excluye ese turno
+    // Solo turnos NO cancelados bloquean al publicador
     const sameDayShiftFilter: any = {
       date: { gte: shiftDate, lt: nextDay },
+      status: { not: 'CANCELADO' },
     };
     if (excludeShiftId) {
       sameDayShiftFilter.id = { not: String(excludeShiftId) };
