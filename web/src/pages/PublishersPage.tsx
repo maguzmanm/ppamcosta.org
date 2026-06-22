@@ -353,7 +353,7 @@ export default function PublishersPage() {
                   type="text"
                   value={form.spouseName}
                   onChange={(e) => setForm({ ...form, spouseName: e.target.value })}
-                  placeholder={`Nombre del ${form.gender === 'M' ? 'esposo' : 'esposa'}`}
+                  placeholder={form.gender === 'M' ? 'Nombre de la esposa' : 'Nombre del esposo'}
                   className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
                 />
               )}
