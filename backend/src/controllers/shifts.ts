@@ -95,6 +95,19 @@ export async function create(req: Request, res: Response, next: NextFunction) {
     const timeSlot = await prisma.timeSlot.findUnique({ where: { id: timeSlotId } });
     if (!timeSlot) throw new NotFoundError('Franja horaria no encontrada');
 
+    // Verificar que no exista ya un turno en el mismo punto, fecha y horario
+    const existing = await prisma.shift.findFirst({
+      where: {
+        locationId,
+        date: new Date(date),
+        timeSlotId,
+        status: { not: 'CANCELADO' },
+      },
+    });
+    if (existing) {
+      throw new ValidationError('Ya existe un turno en este punto, fecha y horario');
+    }
+
     // Crear turno con asignaciones
     const shift = await prisma.$transaction(async (tx) => {
       const newShift = await tx.shift.create({
