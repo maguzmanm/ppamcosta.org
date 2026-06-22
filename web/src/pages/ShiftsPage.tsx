@@ -20,8 +20,11 @@ function formatName(p: { firstName: string; lastName: string; marriedLastName?: 
 function formatLastAssignment(p: any): string {
   const last = p.shiftAssignments?.[0]?.assignedAt;
   if (!last) return 'Sin turnos previos';
-  const d = new Date(last);
-  return `Último: ${d.toLocaleDateString('es-CL')} ${d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`;
+  // Extraer fecha del ISO string sin conversión de zona horaria
+  const d = last.slice(0, 10);
+  const [y, m, day] = d.split('-');
+  const time = last.slice(11, 16);
+  return `Último: ${parseInt(day)}/${m}/${y} ${time}`;
 }
 
 interface AvailablePublisher extends Publisher {
@@ -164,7 +167,12 @@ export default function ShiftsPage() {
 
       <DataTable
         columns={[
-          { key: 'date', header: 'Fecha', render: (s) => new Date(s.date).toLocaleDateString('es-CL') },
+          { key: 'date', header: 'Fecha', render: (s) => {
+            // Extraer YYYY-MM-DD del ISO string para evitar offset de zona horaria
+            const d = (s as any).date?.slice(0, 10) || '';
+            const [y, m, day] = d.split('-');
+            return day ? `${parseInt(day)}/${m}/${y}` : d;
+          } },
           { key: 'location', header: 'Punto', render: (s) => s.location?.name || '-', hideOnMobile: true },
           { key: 'time', header: 'Horario', render: (s) => s.timeSlot?.name || '-' },
           { key: 'status', header: 'Estado', render: (s) => <Badge variant={statusBadge[s.status] || 'default'}>{s.status}</Badge> },
