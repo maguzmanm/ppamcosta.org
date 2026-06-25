@@ -245,6 +245,7 @@ export async function hardDelete(req: Request, res: Response, next: NextFunction
       prisma.absence.deleteMany({ where: { publisherId } }),
       prisma.shiftAssignment.deleteMany({ where: { publisherId } }),
       prisma.experience.deleteMany({ where: { publisherId } }),
+      prisma.locationAssignment.deleteMany({ where: { user: { publisherId } } }),
       prisma.deviceToken.deleteMany({ where: { user: { publisherId } } }),
       prisma.pushSubscription.deleteMany({ where: { user: { publisherId } } }),
       prisma.notificationPreference.deleteMany({ where: { user: { publisherId } } }),
