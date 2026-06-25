@@ -225,6 +225,40 @@ export async function remove(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+// ─── Eliminación definitiva (solo inactivos) ───
+
+export async function hardDelete(req: Request, res: Response, next: NextFunction) {
+  try {
+    const publisherId = req.params.id;
+
+    const publisher = await prisma.publisher.findUnique({ where: { id: publisherId } });
+    if (!publisher) throw new NotFoundError('Publicador no encontrado');
+
+    if (publisher.isActive) {
+      throw new ValidationError('Desactiva el publicador antes de eliminarlo definitivamente');
+    }
+
+    // Limpiar todas las relaciones
+    await prisma.$transaction([
+      prisma.publisher.updateMany({ where: { spouseId: publisherId }, data: { spouseId: null, maritalStatus: null } }),
+      prisma.availability.deleteMany({ where: { publisherId } }),
+      prisma.absence.deleteMany({ where: { publisherId } }),
+      prisma.shiftAssignment.deleteMany({ where: { publisherId } }),
+      prisma.experience.deleteMany({ where: { publisherId } }),
+      prisma.deviceToken.deleteMany({ where: { user: { publisherId } } }),
+      prisma.pushSubscription.deleteMany({ where: { user: { publisherId } } }),
+      prisma.notificationPreference.deleteMany({ where: { user: { publisherId } } }),
+      prisma.notification.deleteMany({ where: { user: { publisherId } } }),
+      prisma.user.deleteMany({ where: { publisherId } }),
+    ]);
+
+    await prisma.publisher.delete({ where: { id: publisherId } });
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+}
+
 // ─── Cónyuges disponibles ───
 
 export async function availableSpouses(req: Request, res: Response, next: NextFunction) {

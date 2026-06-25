@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, Power, PowerOff } from 'lucide-react';
 import api from '../services/api';
 import DataTable from '../components/DataTable';
 import Modal from '../components/Modal';
@@ -134,6 +134,20 @@ export default function PublishersPage() {
     },
   });
 
+  const hardDeleteMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/publishers/${id}/hard`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['publishers'] }),
+    onError: (err: any) => {
+      alert(err?.response?.data?.error || 'Error al eliminar el publicador');
+    },
+  });
+
+  const toggleActiveMutation = useMutation({
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
+      api.put(`/publishers/${id}`, { isActive }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['publishers'] }),
+  });
+
   function resetForm() {
     setEditing(null);
     setForm({
@@ -264,15 +278,26 @@ export default function PublishersPage() {
           {
             key: 'actions',
             header: '',
-            className: 'w-24',
+            className: 'w-28',
             render: (p) => (
               <div className="flex gap-1">
-                <button onClick={(e) => { e.stopPropagation(); openEdit(p); }} className="p-1.5 rounded hover:bg-surface-hover text-text-muted hover:text-primary">
+                <button onClick={(e) => { e.stopPropagation(); openEdit(p); }} className="p-1.5 rounded hover:bg-surface-hover text-text-muted hover:text-primary" title="Editar">
                   <Pencil size={16} />
                 </button>
-                <button onClick={(e) => { e.stopPropagation(); if (confirm('¿Desactivar este publicador?')) deleteMutation.mutate(p.id); }} className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-text-muted hover:text-danger">
-                  <Trash2 size={16} />
-                </button>
+                {p.isActive ? (
+                  <button onClick={(e) => { e.stopPropagation(); if (confirm('¿Desactivar este publicador?')) deleteMutation.mutate(p.id); }} className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-text-muted hover:text-danger" title="Desactivar">
+                    <PowerOff size={16} />
+                  </button>
+                ) : (
+                  <>
+                    <button onClick={(e) => { e.stopPropagation(); toggleActiveMutation.mutate({ id: p.id, isActive: true }); }} className="p-1.5 rounded hover:bg-green-50 dark:hover:bg-green-900/20 text-text-muted hover:text-success" title="Reactivar">
+                      <Power size={16} />
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); if (confirm('¿Eliminar DEFINITIVAMENTE este publicador? Esta acción no se puede deshacer.')) hardDeleteMutation.mutate(p.id); }} className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-text-muted hover:text-danger" title="Eliminar definitivamente">
+                      <Trash2 size={16} />
+                    </button>
+                  </>
+                )}
               </div>
             ),
           },
