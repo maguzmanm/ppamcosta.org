@@ -170,7 +170,7 @@ export async function update(req: Request, res: Response, next: NextFunction) {
     });
 
     // Actualizar o crear usuario si hay email
-    if (email) {
+    if (email || role) {
       if (publisher.user) {
         // Actualizar usuario existente
         const userData: Record<string, unknown> = {};
@@ -182,8 +182,8 @@ export async function update(req: Request, res: Response, next: NextFunction) {
         if (Object.keys(userData).length > 0) {
           await prisma.user.update({ where: { id: publisher.user.id }, data: userData });
         }
-      } else if (password) {
-        // Crear usuario si no existe pero hay email y contraseña
+      } else if (email && password) {
+        // Crear usuario solo si hay email y contraseña
         const passwordHash = await bcrypt.hash(password, 10);
         const user = await prisma.user.create({
           data: { email, passwordHash, role: role || 'PUBLICADOR', publisherId: publisher.id },
