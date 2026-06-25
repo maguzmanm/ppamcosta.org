@@ -86,7 +86,7 @@ export default function LocationsPage() {
 
       <DataTable
         columns={[
-          { key: 'name', header: 'Nombre', render: (l) => (
+          { key: 'name', header: 'Nombre', sortable: true, render: (l) => (
             <div className="flex items-center gap-2">
               <MapPin size={16} className="text-secondary" />
               <span>{l.name}</span>
@@ -102,7 +102,7 @@ export default function LocationsPage() {
               </a>
             </div>
           )},
-          { key: 'status', header: 'Estado', render: (l) => l.isActive ? <span className="text-success text-xs font-medium">Activo</span> : <span className="text-text-muted text-xs">Inactivo</span> },
+          { key: 'status', header: 'Estado', sortable: true, sortKey: 'isActive', render: (l) => l.isActive ? <span className="text-success text-xs font-medium">Activo</span> : <span className="text-text-muted text-xs">Inactivo</span> },
           { key: 'actions', header: '', className: 'w-20',
             render: (l) => (
               <div className="flex gap-1">

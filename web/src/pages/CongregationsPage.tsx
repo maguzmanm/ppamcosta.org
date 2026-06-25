@@ -83,7 +83,7 @@ export default function CongregationsPage() {
 
       <DataTable
         columns={[
-          { key: 'name', header: 'Nombre' },
+          { key: 'name', header: 'Nombre', sortable: true },
           { key: 'circuit', header: 'Circuito', render: (c) => c.circuit?.name || '-', hideOnMobile: true },
           { key: 'publishers', header: 'Publicadores', render: (c) => c._count?.publishers ?? 0 },
           {

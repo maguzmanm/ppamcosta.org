@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
 interface DataTableColumn<T> {
   key: string;
@@ -6,6 +6,8 @@ interface DataTableColumn<T> {
   render?: (item: T) => ReactNode;
   className?: string;
   hideOnMobile?: boolean;
+  sortable?: boolean;
+  sortKey?: string; // clave para ordenar si es distinta de 'key'
 }
 
 interface DataTableProps<T> {
@@ -25,6 +27,31 @@ export default function DataTable<T>({
   emptyMessage = 'No se encontraron registros',
   loading = false,
 }: DataTableProps<T>) {
+  const [sortCol, setSortCol] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
+  function handleSort(col: DataTableColumn<T>) {
+    if (!col.sortable && !col.sortKey) return;
+    const key = col.sortKey || col.key;
+    if (sortCol === key) {
+      if (sortDir === 'asc') setSortDir('desc');
+      else { setSortCol(null); setSortDir('asc'); }
+    } else {
+      setSortCol(key);
+      setSortDir('asc');
+    }
+  }
+
+  const sortedData = sortCol
+    ? [...data].sort((a, b) => {
+        const aVal = (a as any)[sortCol];
+        const bVal = (b as any)[sortCol];
+        const aStr = aVal != null ? String(aVal).toLowerCase() : '';
+        const bStr = bVal != null ? String(bVal).toLowerCase() : '';
+        const cmp = aStr.localeCompare(bStr, 'es', { numeric: true });
+        return sortDir === 'asc' ? cmp : -cmp;
+      })
+    : data;
   if (loading) {
     return (
       <div className="bg-surface rounded-xl border border-border overflow-hidden">
@@ -47,20 +74,33 @@ export default function DataTable<T>({
         <table className="w-full">
           <thead>
             <tr className="border-b border-border bg-background">
-              {columns.map((col) => (
-                <th
-                  key={col.key}
-                  className={`px-4 py-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider ${
-                    col.hideOnMobile ? 'hidden md:table-cell' : ''
-                  } ${col.className || ''}`}
-                >
-                  {col.header}
-                </th>
-              ))}
+              {columns.map((col) => {
+                const sortKey = col.sortKey || col.key;
+                const isSortable = col.sortable || !!col.sortKey;
+                const isActive = sortCol === sortKey;
+                return (
+                  <th
+                    key={col.key}
+                    onClick={() => isSortable && handleSort(col)}
+                    className={`px-4 py-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider ${
+                      col.hideOnMobile ? 'hidden md:table-cell' : ''
+                    } ${col.className || ''} ${isSortable ? 'cursor-pointer select-none hover:text-text-primary transition-colors' : ''}`}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      {col.header}
+                      {isSortable && (
+                        <span className="text-text-muted text-[10px] leading-none">
+                          {isActive ? (sortDir === 'asc' ? ' ▲' : ' ▼') : ' ⇅'}
+                        </span>
+                      )}
+                    </span>
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {data.map((item) => (
+            {sortedData.map((item) => (
               <tr
                 key={keyExtractor(item)}
                 onClick={() => onRowClick?.(item)}

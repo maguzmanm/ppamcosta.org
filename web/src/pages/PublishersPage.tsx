@@ -255,11 +255,11 @@ export default function PublishersPage() {
 
       <DataTable
         columns={[
-          { key: 'name', header: 'Nombre', render: (p) => formatName(p) },
+          { key: 'name', header: 'Nombre', sortable: true, sortKey: 'lastName', render: (p) => formatName(p) },
           { key: 'email', header: 'Email', hideOnMobile: true, render: (p) => p.email || '-' },
           { key: 'phone', header: 'Teléfono', hideOnMobile: true, render: (p) => formatPhone(p.phone) },
-          { key: 'role', header: 'Rol', render: (p) => roleBadge(p.user?.role) },
-          { key: 'congregation', header: 'Congregación', hideOnMobile: true, render: (p) => p.congregation?.name || '-' },
+          { key: 'role', header: 'Rol', sortable: true, render: (p) => roleBadge(p.user?.role) },
+          { key: 'congregation', header: 'Congregación', sortable: true, hideOnMobile: true, render: (p) => p.congregation?.name || '-' },
           { key: 'location', header: 'Puntos asignados', hideOnMobile: true, render: (p) => {
             const locs = (p as any).publisherLocations || [];
             return locs.length > 0

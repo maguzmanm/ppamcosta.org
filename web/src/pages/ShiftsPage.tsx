@@ -167,15 +167,15 @@ export default function ShiftsPage() {
 
       <DataTable
         columns={[
-          { key: 'date', header: 'Fecha', render: (s) => {
+          { key: 'date', header: 'Fecha', sortable: true, render: (s) => {
             // Extraer YYYY-MM-DD del ISO string para evitar offset de zona horaria
             const d = (s as any).date?.slice(0, 10) || '';
             const [y, m, day] = d.split('-');
             return day ? `${parseInt(day)}/${m}/${y}` : d;
           } },
-          { key: 'location', header: 'Punto', render: (s) => s.location?.name || '-', hideOnMobile: true },
+          { key: 'location', header: 'Punto', sortable: true, render: (s) => s.location?.name || '-', hideOnMobile: true },
           { key: 'time', header: 'Horario', render: (s) => s.timeSlot?.name || '-' },
-          { key: 'status', header: 'Estado', render: (s) => <Badge variant={statusBadge[s.status] || 'default'}>{s.status}</Badge> },
+          { key: 'status', header: 'Estado', sortable: true, render: (s) => <Badge variant={statusBadge[s.status] || 'default'}>{s.status}</Badge> },
           { key: 'assignments', header: 'Asignados', render: (s) => (
             <div className="text-sm">
               {(s.assignments || []).length === 0 ? (
