@@ -158,6 +158,29 @@ export async function remove(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+// ─── Eliminación definitiva (solo inactivos) ───
+
+export async function hardDelete(req: Request, res: Response, next: NextFunction) {
+  try {
+    const locationId = req.params.id;
+    const location = await prisma.location.findUnique({ where: { id: locationId } });
+    if (!location) throw new NotFoundError('Punto no encontrado');
+    if (location.isActive) throw new ValidationError('Desactiva el punto antes de eliminarlo');
+
+    await prisma.$transaction([
+      prisma.shiftAssignment.deleteMany({ where: { shift: { locationId } } }),
+      prisma.shift.deleteMany({ where: { locationId } }),
+      prisma.locationAssignment.deleteMany({ where: { locationId } }),
+      prisma.publisherLocation.deleteMany({ where: { locationId } }),
+    ]);
+
+    await prisma.location.delete({ where: { id: locationId } });
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+}
+
 // ─── Asignación de encargados/auxiliares ───
 
 export async function assignUser(req: Request, res: Response, next: NextFunction) {

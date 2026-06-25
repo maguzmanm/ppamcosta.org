@@ -5,6 +5,7 @@ import {
   create,
   update,
   remove,
+  hardDelete,
   assignUser,
   removeAssignment,
   getMyLocations,
@@ -21,6 +22,7 @@ locationRouter.get('/my', authorize('COORDINADOR', 'ENCARGADO_PUNTO', 'AUXILIAR_
 locationRouter.get('/:id', authorize('COORDINADOR', 'AUXILIAR', 'ENCARGADO_PUNTO', 'AUXILIAR_PUNTO'), getById);
 locationRouter.post('/', authorize('COORDINADOR'), create);
 locationRouter.put('/:id', authorize('COORDINADOR'), update);
+locationRouter.delete('/:id/hard', authorize('COORDINADOR'), hardDelete);
 locationRouter.delete('/:id', authorize('COORDINADOR'), remove);
 
 // Asignación de encargados
