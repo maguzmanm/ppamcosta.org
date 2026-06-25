@@ -194,10 +194,30 @@ export async function update(req: Request, res: Response, next: NextFunction) {
 
 export async function remove(req: Request, res: Response, next: NextFunction) {
   try {
-    // En lugar de eliminar, desactivamos
+    const publisherId = req.params.id;
+
+    // Limpiar relaciones para evitar conflictos
+    await prisma.$transaction([
+      // Limpiar referencia de cónyuge en el otro publicador
+      prisma.publisher.updateMany({
+        where: { spouseId: publisherId },
+        data: { spouseId: null, maritalStatus: null },
+      }),
+      // Eliminar disponibilidades
+      prisma.availability.deleteMany({ where: { publisherId } }),
+      // Eliminar asignaciones a turnos pendientes (las aceptadas se conservan)
+      prisma.shiftAssignment.deleteMany({ where: { publisherId, status: 'PENDIENTE' } }),
+      // Desactivar usuario si existe
+      prisma.user.updateMany({
+        where: { publisherId },
+        data: { role: 'PUBLICADOR' },
+      }),
+    ]);
+
+    // Desactivar el publicador
     await prisma.publisher.update({
-      where: { id: req.params.id },
-      data: { isActive: false },
+      where: { id: publisherId },
+      data: { isActive: false, locationId: null },
     });
     res.status(204).send();
   } catch (err) {

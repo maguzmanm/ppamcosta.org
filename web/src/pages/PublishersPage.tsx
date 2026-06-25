@@ -129,6 +129,9 @@ export default function PublishersPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api.delete(`/publishers/${id}`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['publishers'] }),
+    onError: (err: any) => {
+      alert(err?.response?.data?.error || 'Error al desactivar el publicador');
+    },
   });
 
   function resetForm() {
