@@ -25,7 +25,7 @@ export async function list(req: Request, res: Response, next: NextFunction) {
       where,
       include: {
         congregation: { include: { circuit: true } },
-        location: { select: { id: true, name: true } },
+        publisherLocations: { include: { location: { select: { id: true, name: true } } } },
         user: { select: { id: true, email: true, role: true } },
         _count: { select: { availabilities: true } },
       },
@@ -43,7 +43,7 @@ export async function getById(req: Request, res: Response, next: NextFunction) {
       where: { id: req.params.id },
       include: {
         congregation: { include: { circuit: true } },
-        location: { select: { id: true, name: true } },
+        publisherLocations: { include: { location: { select: { id: true, name: true } } } },
         availabilities: { include: { timeSlot: true } },
         user: { select: { id: true, email: true, role: true } },
       },
@@ -57,18 +57,13 @@ export async function getById(req: Request, res: Response, next: NextFunction) {
 
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
-    const { firstName, lastName, marriedLastName, designations, gender, congregationId, locationId, phone, email, notes, password, role, maritalStatus, spouseId, spouseIsExternal, spouseName } = req.body;
+    const { firstName, lastName, marriedLastName, designations, gender, congregationId, locationIds, phone, email, notes, password, role, maritalStatus, spouseId, spouseIsExternal, spouseName } = req.body;
     if (!firstName || !lastName || !congregationId) {
       throw new ValidationError('Nombre, apellido y congregación son requeridos');
     }
 
     const congregation = await prisma.congregation.findUnique({ where: { id: congregationId } });
     if (!congregation) throw new NotFoundError('Congregación no encontrada');
-
-    if (locationId) {
-      const loc = await prisma.location.findUnique({ where: { id: locationId } });
-      if (!loc) throw new NotFoundError('Punto no encontrado');
-    }
 
     const publisher = await prisma.publisher.create({
       data: {
@@ -81,11 +76,20 @@ export async function create(req: Request, res: Response, next: NextFunction) {
         spouseIsExternal: spouseIsExternal === true || spouseIsExternal === 'true',
         spouseName: spouseName || null,
         congregationId,
-        locationId: locationId || null,
         phone, email, notes,
       },
       include: { congregation: { include: { circuit: true } } },
     });
+
+    // Asignar puntos (muchos-a-muchos)
+    if (locationIds && Array.isArray(locationIds) && locationIds.length > 0) {
+      await prisma.publisherLocation.createMany({
+        data: locationIds.filter(Boolean).map((lid: string) => ({
+          publisherId: publisher.id,
+          locationId: lid,
+        })),
+      });
+    }
 
     // Si se asignó cónyuge, actualizar bidireccionalmente
     if (spouseId) {
@@ -117,11 +121,19 @@ export async function create(req: Request, res: Response, next: NextFunction) {
 
 export async function update(req: Request, res: Response, next: NextFunction) {
   try {
-    const { firstName, lastName, marriedLastName, designations, gender, congregationId, locationId, phone, email, notes, isActive, role, password, maritalStatus, spouseId, spouseIsExternal, spouseName } = req.body;
+    const { firstName, lastName, marriedLastName, designations, gender, congregationId, locationIds, phone, email, notes, isActive, role, password, maritalStatus, spouseId, spouseIsExternal, spouseName } = req.body;
 
-    if (locationId) {
-      const loc = await prisma.location.findUnique({ where: { id: locationId } });
-      if (!loc) throw new NotFoundError('Punto no encontrado');
+    if (locationIds !== undefined) {
+      // Sincronizar puntos: borrar existentes y crear nuevos
+      await prisma.publisherLocation.deleteMany({ where: { publisherId: req.params.id } });
+      if (Array.isArray(locationIds) && locationIds.length > 0) {
+        await prisma.publisherLocation.createMany({
+          data: locationIds.filter(Boolean).map((lid: string) => ({
+            publisherId: req.params.id,
+            locationId: lid,
+          })),
+        });
+      }
     }
 
     // Si cambió el spouseId, limpiar relación anterior y setear bidireccional
@@ -152,7 +164,7 @@ export async function update(req: Request, res: Response, next: NextFunction) {
         spouseId: spouseId !== undefined ? (spouseId || null) : undefined,
         spouseIsExternal: spouseIsExternal !== undefined ? (spouseIsExternal === true || spouseIsExternal === 'true') : undefined,
         spouseName: spouseName !== undefined ? (spouseName || null) : undefined,
-        congregationId, locationId: locationId !== undefined ? (locationId || null) : undefined, phone, email, notes, isActive,
+        congregationId, phone, email, notes, isActive,
       },
       include: { congregation: { include: { circuit: true } }, user: { select: { id: true, email: true, role: true } } },
     });
@@ -207,6 +219,8 @@ export async function remove(req: Request, res: Response, next: NextFunction) {
       prisma.availability.deleteMany({ where: { publisherId } }),
       // Eliminar asignaciones a turnos pendientes (las aceptadas se conservan)
       prisma.shiftAssignment.deleteMany({ where: { publisherId, status: 'PENDIENTE' } }),
+      // Eliminar vinculación a puntos
+      prisma.publisherLocation.deleteMany({ where: { publisherId } }),
       // Desactivar usuario si existe
       prisma.user.updateMany({
         where: { publisherId },
@@ -217,7 +231,7 @@ export async function remove(req: Request, res: Response, next: NextFunction) {
     // Desactivar el publicador
     await prisma.publisher.update({
       where: { id: publisherId },
-      data: { isActive: false, locationId: null },
+      data: { isActive: false },
     });
     res.status(204).send();
   } catch (err) {
@@ -245,6 +259,7 @@ export async function hardDelete(req: Request, res: Response, next: NextFunction
       prisma.absence.deleteMany({ where: { publisherId } }),
       prisma.shiftAssignment.deleteMany({ where: { publisherId } }),
       prisma.experience.deleteMany({ where: { publisherId } }),
+      prisma.publisherLocation.deleteMany({ where: { publisherId } }),
       prisma.locationAssignment.deleteMany({ where: { user: { publisherId } } }),
       prisma.deviceToken.deleteMany({ where: { user: { publisherId } } }),
       prisma.pushSubscription.deleteMany({ where: { user: { publisherId } } }),

@@ -66,7 +66,7 @@ export default function PublishersPage() {
     spouseIsExternal: false,
     spouseName: '',
     congregationId: '',
-    locationId: '',
+    locationIds: [] as string[],
     role: 'PUBLICADOR' as UserRole,
     password: '',
     isActive: true,
@@ -148,7 +148,7 @@ export default function PublishersPage() {
       spouseIsExternal: false,
       spouseName: '',
       congregationId: '',
-      locationId: '',
+      locationIds: [],
       role: 'PUBLICADOR',
       password: '',
       isActive: true,
@@ -187,7 +187,7 @@ export default function PublishersPage() {
       spouseIsExternal: (p as any).spouseIsExternal || false,
       spouseName: (p as any).spouseName || '',
       congregationId: p.congregationId,
-      locationId: (p as any).locationId || '',
+      locationIds: ((p as any).publisherLocations || []).map((pl: any) => pl.locationId),
       role: (p.user?.role as UserRole) || 'PUBLICADOR',
       password: '',
       isActive: p.isActive,
@@ -260,7 +260,12 @@ export default function PublishersPage() {
           { key: 'phone', header: 'Teléfono', hideOnMobile: true, render: (p) => formatPhone(p.phone) },
           { key: 'role', header: 'Rol', render: (p) => roleBadge(p.user?.role) },
           { key: 'congregation', header: 'Congregación', hideOnMobile: true, render: (p) => p.congregation?.name || '-' },
-          { key: 'location', header: 'Punto asignado', hideOnMobile: true, render: (p) => (p as any).location?.name || '-' },
+          { key: 'location', header: 'Puntos asignados', hideOnMobile: true, render: (p) => {
+            const locs = (p as any).publisherLocations || [];
+            return locs.length > 0
+              ? locs.map((pl: any) => pl.location?.name).filter(Boolean).join(', ')
+              : '-';
+          } },
           {
             key: 'actions',
             header: '',
@@ -392,12 +397,30 @@ export default function PublishersPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">Punto asignado</label>
-            <select value={form.locationId} onChange={(e) => setForm({ ...form, locationId: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm">
-              <option value="">Ninguno</option>
-              {(locations || []).map((l: any) => <option key={l.id} value={l.id}>{l.name}</option>)}
-            </select>
+            <label className="block text-sm font-medium text-text-secondary mb-1">Puntos asignados</label>
+            <div className="max-h-32 overflow-y-auto border border-border rounded-lg p-2 bg-surface">
+              {(locations || []).map((l: any) => (
+                <label key={l.id} className="flex items-center gap-2 py-0.5 text-sm text-text-primary cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.locationIds.includes(l.id)}
+                    onChange={(e) => {
+                      setForm({
+                        ...form,
+                        locationIds: e.target.checked
+                          ? [...form.locationIds, l.id]
+                          : form.locationIds.filter(id => id !== l.id),
+                      });
+                    }}
+                    className="rounded border-border"
+                  />
+                  {l.name}
+                </label>
+              ))}
+              {(!locations || locations.length === 0) && (
+                <p className="text-text-muted text-xs p-1">No hay puntos configurados</p>
+              )}
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">Rol</label>

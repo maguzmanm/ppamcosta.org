@@ -60,8 +60,6 @@ model Publisher {
   // displayName: si marriedLastName existe → "firstName de marriedLastName"
   congregationId String         @map("congregation_id")
   congregation   Congregation   @relation(fields: [congregationId], references: [id])
-  locationId     String?        @map("location_id")
-  location       Location?      @relation(fields: [locationId], references: [id])
   phone          String?
   email          String?
   isActive       Boolean        @default(true) @map("is_active")
@@ -74,8 +72,20 @@ model Publisher {
   absences       Absence[]
   shiftAssignments ShiftAssignment[]
   experiences    Experience[]
+  publisherLocations PublisherLocation[]
 
   @@map("publishers")
+}
+
+// ─── Relación muchos-a-muchos Publicador ↔ Punto ───
+model PublisherLocation {
+  publisherId String   @map("publisher_id")
+  publisher   Publisher @relation(fields: [publisherId], references: [id], onDelete: Cascade)
+  locationId  String   @map("location_id")
+  location    Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@id([publisherId, locationId])
+  @@map("publisher_locations")
 }
 
 // ─── Usuarios ───
@@ -149,7 +159,7 @@ model Location {
 
   shifts               Shift[]
   locationAssignments  LocationAssignment[]
-  publishers           Publisher[]
+  publisherLocations   PublisherLocation[]
 
   @@map("locations")
 }

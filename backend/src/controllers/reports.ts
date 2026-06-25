@@ -19,7 +19,9 @@ export async function publishersReport(req: Request, res: Response, next: NextFu
     const { congregationId, locationId, role, isActive, gender } = req.query;
     const where: any = {};
     if (congregationId) where.congregationId = String(congregationId);
-    if (locationId) where.locationId = String(locationId);
+    if (locationId) {
+      where.publisherLocations = { some: { locationId: String(locationId) } };
+    }
     if (isActive !== undefined) where.isActive = isActive === 'true';
     if (gender) where.gender = String(gender);
     if (role) where.user = { role: String(role) };
@@ -28,7 +30,7 @@ export async function publishersReport(req: Request, res: Response, next: NextFu
       where,
       include: {
         congregation: { select: { name: true } },
-        location: { select: { name: true } },
+        publisherLocations: { include: { location: { select: { name: true } } } },
         user: { select: { role: true, email: true } },
       },
       orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
@@ -39,9 +41,9 @@ export async function publishersReport(req: Request, res: Response, next: NextFu
       Email: p.email || '',
       Teléfono: p.phone || '',
       Género: p.gender === 'M' ? 'Masculino' : p.gender === 'F' ? 'Femenino' : '',
-      Congregación: p.congregation?.name || '',
-      'Punto asignado': p.location?.name || '',
-      Rol: p.user?.role?.replace(/_/g, ' ') || '',
+      Congregación: (p as any).congregation?.name || '',
+      'Punto(s) asignado(s)': (p as any).publisherLocations?.map((pl: any) => pl.location?.name).filter(Boolean).join(', ') || '',
+      Rol: (p as any).user?.role?.replace(/_/g, ' ') || '',
       Designaciones: p.designations ? JSON.parse(p.designations).join(', ') : '',
       Activo: p.isActive ? 'Sí' : 'No',
     }));
@@ -145,10 +147,12 @@ export async function locationsReport(req: Request, res: Response, next: NextFun
         locationAssignments: {
           include: { user: { include: { publisher: { select: { firstName: true, lastName: true } } } } },
         },
-        publishers: {
-          where: { isActive: true },
-          select: { firstName: true, lastName: true, marriedLastName: true },
-          orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+        publisherLocations: {
+          include: {
+            publisher: {
+              select: { firstName: true, lastName: true, marriedLastName: true },
+            },
+          },
         },
       },
       orderBy: { name: 'asc' },
@@ -156,9 +160,10 @@ export async function locationsReport(req: Request, res: Response, next: NextFun
 
     const data: any[] = [];
     for (const l of locations) {
-      const encargado = l.locationAssignments.find((a: any) => a.roleAtLocation === 'ENCARGADO');
-      const auxiliar = l.locationAssignments.find((a: any) => a.roleAtLocation === 'AUXILIAR');
-      const pubList = l.publishers.length > 0 ? l.publishers : [null];
+      const encargado = (l as any).locationAssignments.find((a: any) => a.roleAtLocation === 'ENCARGADO');
+      const auxiliar = (l as any).locationAssignments.find((a: any) => a.roleAtLocation === 'AUXILIAR');
+      const pubs = (l as any).publisherLocations?.map((pl: any) => pl.publisher).filter(Boolean) || [];
+      const pubList = pubs.length > 0 ? pubs : [null];
       for (const p of pubList) {
         data.push({
           Punto: l.name,
@@ -208,7 +213,7 @@ export async function availabilityReport(req: Request, res: Response, next: Next
     if (locationId) {
       where.publisher = {
         ...(where.publisher || {}),
-        locationId: String(locationId),
+        publisherLocations: { some: { locationId: String(locationId) } },
       };
     }
 
@@ -223,7 +228,7 @@ export async function availabilityReport(req: Request, res: Response, next: Next
             marriedLastName: true,
             gender: true,
             congregation: { select: { name: true } },
-            location: { select: { id: true, name: true } },
+            publisherLocations: { include: { location: { select: { id: true, name: true } } } },
           },
         },
         timeSlot: {
@@ -248,8 +253,8 @@ export async function availabilityReport(req: Request, res: Response, next: Next
         : `${a.publisher.firstName} ${a.publisher.lastName}`,
       gender: a.publisher.gender,
       congregation: a.publisher.congregation?.name || '',
-      locationName: a.publisher.location?.name || '—',
-      locationId: a.publisher.location?.id || '',
+      locationName: (a.publisher as any).publisherLocations?.map((pl: any) => pl.location?.name).filter(Boolean).join(', ') || '—',
+      locationId: (a.publisher as any).publisherLocations?.[0]?.location?.id || '',
       dayOfWeek: a.dayOfWeek,
       dayName: DAYS[a.dayOfWeek] || '',
       timeSlotId: a.timeSlot.id,
