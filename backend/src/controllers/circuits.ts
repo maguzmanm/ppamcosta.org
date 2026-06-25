@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../prisma';
-import { NotFoundError, ValidationError } from '../utils/errors';
+import { AppError, NotFoundError, ValidationError } from '../utils/errors';
 
 export async function list(_req: Request, res: Response, next: NextFunction) {
   try {
@@ -62,6 +62,32 @@ export async function update(req: Request, res: Response, next: NextFunction) {
 
 export async function remove(req: Request, res: Response, next: NextFunction) {
   try {
+    const { reassignTo } = req.query;
+    const circuit = await prisma.circuit.findUnique({
+      where: { id: req.params.id },
+      include: { _count: { select: { congregations: true } } },
+    });
+
+    if (!circuit) throw new NotFoundError('Circuito no encontrado');
+
+    if (circuit._count.congregations > 0) {
+      if (!reassignTo || String(reassignTo) === req.params.id) {
+        throw new AppError(
+          `No se puede eliminar porque tiene ${circuit._count.congregations} congregacion(es). Selecciona otro circuito para reasignarlas.`,
+          409
+        );
+      }
+      // Verificar que el circuito destino existe
+      const target = await prisma.circuit.findUnique({ where: { id: String(reassignTo) } });
+      if (!target) throw new NotFoundError('Circuito destino no encontrado');
+
+      // Reasignar congregaciones al nuevo circuito
+      await prisma.congregation.updateMany({
+        where: { circuitId: req.params.id },
+        data: { circuitId: String(reassignTo) },
+      });
+    }
+
     await prisma.circuit.delete({ where: { id: req.params.id } });
     res.status(204).send();
   } catch (err) {

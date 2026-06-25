@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 import api from '../services/api';
 import DataTable from '../components/DataTable';
 import Modal from '../components/Modal';
@@ -11,6 +11,10 @@ export default function CircuitsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Circuit | null>(null);
   const [name, setName] = useState('');
+
+  // Estado para eliminación con reasignación
+  const [deleteTarget, setDeleteTarget] = useState<Circuit | null>(null);
+  const [reassignToId, setReassignToId] = useState('');
 
   const { data: circuits, isLoading } = useQuery({
     queryKey: ['circuits'],
@@ -34,8 +38,19 @@ export default function CircuitsPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => api.delete(`/circuits/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['circuits'] }),
+    mutationFn: ({ id, reassignTo }: { id: string; reassignTo?: string }) => {
+      const params = reassignTo ? { reassignTo } : {};
+      return api.delete(`/circuits/${id}`, { params });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['circuits'] });
+      setDeleteTarget(null);
+      setReassignToId('');
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.error || err?.message || 'Error al eliminar el circuito';
+      alert(msg);
+    },
   });
 
   function openCreate() {
@@ -68,7 +83,16 @@ export default function CircuitsPage() {
             render: (c) => (
               <div className="flex gap-1">
                 <button onClick={(e) => { e.stopPropagation(); openEdit(c); }} className="p-1.5 rounded hover:bg-surface-hover text-text-muted hover:text-primary"><Pencil size={16} /></button>
-                <button onClick={(e) => { e.stopPropagation(); if (confirm('¿Eliminar este circuito?')) deleteMutation.mutate(c.id); }} className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-text-muted hover:text-danger"><Trash2 size={16} /></button>
+                <button onClick={(e) => {
+                  e.stopPropagation();
+                  const count = (c as any)._count?.congregations || (c as any).congregations?.length || 0;
+                  if (count > 0) {
+                    setDeleteTarget(c);
+                    setReassignToId('');
+                  } else if (confirm('¿Eliminar este circuito?')) {
+                    deleteMutation.mutate({ id: c.id });
+                  }
+                }} className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-text-muted hover:text-danger"><Trash2 size={16} /></button>
               </div>
             ),
           },
@@ -85,6 +109,58 @@ export default function CircuitsPage() {
           <label className="block text-sm font-medium text-text-secondary mb-1">Nombre del circuito</label>
           <input required value={name} onChange={(e) => setName(e.target.value)}
             className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm" />
+        </div>
+      </Modal>
+
+      {/* Modal de reasignación antes de eliminar */}
+      <Modal
+        open={!!deleteTarget}
+        onClose={() => { setDeleteTarget(null); setReassignToId(''); }}
+        title="Reasignar congregaciones"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-700">
+            <AlertTriangle size={20} className="text-amber-600 shrink-0 mt-0.5" />
+            <div className="text-sm text-amber-800 dark:text-amber-200">
+              <p className="font-medium mb-1">El circuito <strong>{deleteTarget?.name}</strong> tiene {
+                (deleteTarget as any)?._count?.congregations || (deleteTarget as any)?.congregations?.length || 0
+              } congregacion(es).</p>
+              <p>Selecciona otro circuito para reasignarlas antes de eliminar.</p>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-1">Circuito destino</label>
+            <select
+              value={reassignToId}
+              onChange={(e) => setReassignToId(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
+            >
+              <option value="">-- Seleccionar --</option>
+              {(circuits || []).filter(c => c.id !== deleteTarget?.id).map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-2 pt-2 border-t border-border">
+            <button
+              onClick={() => {
+                if (deleteTarget && reassignToId) {
+                  deleteMutation.mutate({ id: deleteTarget.id, reassignTo: reassignToId });
+                }
+              }}
+              disabled={!reassignToId || deleteMutation.isPending}
+              className="px-4 py-2 bg-danger text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors text-sm font-medium"
+            >
+              {deleteMutation.isPending ? 'Eliminando...' : 'Reasignar y eliminar'}
+            </button>
+            <button
+              onClick={() => { setDeleteTarget(null); setReassignToId(''); }}
+              className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-text-secondary rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors text-sm ml-auto"
+            >
+              Cancelar
+            </button>
+          </div>
         </div>
       </Modal>
     </div>
