@@ -399,7 +399,7 @@ export default function PublishersPage() {
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">Puntos asignados</label>
             <div className="max-h-32 overflow-y-auto border border-border rounded-lg p-2 bg-surface">
-              {(locations || []).map((l: any) => (
+              {(locations || []).filter((l: any) => l.isActive || form.locationIds.includes(l.id)).map((l: any) => (
                 <label key={l.id} className="flex items-center gap-2 py-0.5 text-sm text-text-primary cursor-pointer">
                   <input
                     type="checkbox"
