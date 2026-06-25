@@ -84,8 +84,8 @@ export default function CongregationsPage() {
       <DataTable
         columns={[
           { key: 'name', header: 'Nombre', sortable: true },
-          { key: 'circuit', header: 'Circuito', render: (c) => c.circuit?.name || '-', hideOnMobile: true },
-          { key: 'publishers', header: 'Publicadores', render: (c) => c._count?.publishers ?? 0 },
+          { key: 'circuit', header: 'Circuito', sortable: true, render: (c) => c.circuit?.name || '-', hideOnMobile: true },
+          { key: 'publishers', header: 'Publicadores', sortable: true, sortKey: '_count.publishers', render: (c) => (c as any)._count?.publishers ?? 0 },
           {
             key: 'actions', header: '', className: 'w-24',
             render: (c) => (

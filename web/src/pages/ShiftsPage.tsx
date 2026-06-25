@@ -174,7 +174,7 @@ export default function ShiftsPage() {
             return day ? `${parseInt(day)}/${m}/${y}` : d;
           } },
           { key: 'location', header: 'Punto', sortable: true, render: (s) => s.location?.name || '-', hideOnMobile: true },
-          { key: 'time', header: 'Horario', render: (s) => s.timeSlot?.name || '-' },
+          { key: 'time', header: 'Horario', sortable: true, render: (s) => s.timeSlot?.name || '-' },
           { key: 'status', header: 'Estado', sortable: true, render: (s) => <Badge variant={statusBadge[s.status] || 'default'}>{s.status}</Badge> },
           { key: 'assignments', header: 'Asignados', render: (s) => (
             <div className="text-sm">

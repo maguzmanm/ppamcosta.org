@@ -77,7 +77,7 @@ export default function CircuitsPage() {
       <DataTable
         columns={[
           { key: 'name', header: 'Nombre', sortable: true },
-          { key: 'congregations', header: 'Congregaciones', render: (c) => (c as any)._count?.congregations ?? 0 },
+          { key: 'congregations', header: 'Congregaciones', sortable: true, sortKey: '_count.congregations', render: (c) => (c as any)._count?.congregations ?? 0 },
           {
             key: 'actions', header: '', className: 'w-24',
             render: (c) => (

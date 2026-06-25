@@ -42,10 +42,14 @@ export default function DataTable<T>({
     }
   }
 
+  function getNestedValue(obj: any, path: string): any {
+    return path.split('.').reduce((o, k) => (o != null ? o[k] : undefined), obj);
+  }
+
   const sortedData = sortCol
     ? [...data].sort((a, b) => {
-        const aVal = (a as any)[sortCol];
-        const bVal = (b as any)[sortCol];
+        const aVal = getNestedValue(a, sortCol);
+        const bVal = getNestedValue(b, sortCol);
         const aStr = aVal != null ? String(aVal).toLowerCase() : '';
         const bStr = bVal != null ? String(bVal).toLowerCase() : '';
         const cmp = aStr.localeCompare(bStr, 'es', { numeric: true });

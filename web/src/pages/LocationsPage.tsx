@@ -92,7 +92,7 @@ export default function LocationsPage() {
               <span>{l.name}</span>
             </div>
           )},
-          { key: 'address', header: 'Dirección', hideOnMobile: true, render: (l) => (
+          { key: 'address', header: 'Dirección', sortable: true, hideOnMobile: true, render: (l) => (
             <div className="flex items-center gap-1.5">
               <span className="text-text-secondary">{l.address}</span>
               <a href={mapsUrl(l)} target="_blank" rel="noopener noreferrer"

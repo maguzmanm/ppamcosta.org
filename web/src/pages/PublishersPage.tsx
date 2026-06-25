@@ -256,11 +256,11 @@ export default function PublishersPage() {
       <DataTable
         columns={[
           { key: 'name', header: 'Nombre', sortable: true, sortKey: 'lastName', render: (p) => formatName(p) },
-          { key: 'email', header: 'Email', hideOnMobile: true, render: (p) => p.email || '-' },
-          { key: 'phone', header: 'Teléfono', hideOnMobile: true, render: (p) => formatPhone(p.phone) },
+          { key: 'email', header: 'Email', sortable: true, hideOnMobile: true, render: (p) => p.email || '-' },
+          { key: 'phone', header: 'Teléfono', sortable: true, hideOnMobile: true, render: (p) => formatPhone(p.phone) },
           { key: 'role', header: 'Rol', sortable: true, render: (p) => roleBadge(p.user?.role) },
           { key: 'congregation', header: 'Congregación', sortable: true, hideOnMobile: true, render: (p) => p.congregation?.name || '-' },
-          { key: 'location', header: 'Puntos asignados', hideOnMobile: true, render: (p) => {
+          { key: 'location', header: 'Puntos asignados', sortable: true, hideOnMobile: true, render: (p) => {
             const locs = (p as any).publisherLocations || [];
             return locs.length > 0
               ? locs.map((pl: any) => pl.location?.name).filter(Boolean).join(', ')
