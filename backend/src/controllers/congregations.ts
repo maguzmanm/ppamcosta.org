@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../prisma';
-import { NotFoundError, ValidationError } from '../utils/errors';
+import { NotFoundError, ValidationError, AppError } from '../utils/errors';
 
 export async function list(req: Request, res: Response, next: NextFunction) {
   try {
@@ -66,6 +66,31 @@ export async function update(req: Request, res: Response, next: NextFunction) {
 
 export async function remove(req: Request, res: Response, next: NextFunction) {
   try {
+    const { reassignTo } = req.query;
+    const congregation = await prisma.congregation.findUnique({
+      where: { id: req.params.id },
+      include: { _count: { select: { publishers: true } } },
+    });
+    if (!congregation) throw new NotFoundError('Congregación no encontrada');
+
+    if (congregation._count.publishers > 0) {
+      if (!reassignTo || String(reassignTo) === req.params.id) {
+        throw new AppError(
+          `No se puede eliminar porque tiene ${congregation._count.publishers} publicador(es). Selecciona otra congregación para reasignarlos.`,
+          409
+        );
+      }
+      // Verificar que la congregación destino existe
+      const target = await prisma.congregation.findUnique({ where: { id: String(reassignTo) } });
+      if (!target) throw new NotFoundError('Congregación destino no encontrada');
+
+      // Reasignar publicadores a la nueva congregación
+      await prisma.publisher.updateMany({
+        where: { congregationId: req.params.id },
+        data: { congregationId: String(reassignTo) },
+      });
+    }
+
     await prisma.congregation.delete({ where: { id: req.params.id } });
     res.status(204).send();
   } catch (err) {
