@@ -173,8 +173,8 @@ export default function ShiftsPage() {
             const [y, m, day] = d.split('-');
             return day ? `${parseInt(day)}/${m}/${y}` : d;
           } },
-          { key: 'location', header: 'Punto', sortable: true, render: (s) => s.location?.name || '-', hideOnMobile: true },
-          { key: 'time', header: 'Horario', sortable: true, render: (s) => s.timeSlot?.name || '-' },
+          { key: 'location', header: 'Punto', sortable: true, sortKey: 'location.name', render: (s) => s.location?.name || '-', hideOnMobile: true },
+          { key: 'time', header: 'Horario', sortable: true, sortKey: 'timeSlot.name', render: (s) => s.timeSlot?.name || '-' },
           { key: 'status', header: 'Estado', sortable: true, render: (s) => <Badge variant={statusBadge[s.status] || 'default'}>{s.status}</Badge> },
           { key: 'assignments', header: 'Asignados', render: (s) => (
             <div className="text-sm">
