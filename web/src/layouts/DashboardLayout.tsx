@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { Menu, Sun, Moon, LogOut, LayoutDashboard, GitBranch, Building2, Users, MapPin, Calendar, Clock, FileText, Megaphone, BarChart3, Bell, Settings } from 'lucide-react';
+import { Menu, Sun, Moon, LogOut, LayoutDashboard, GitBranch, Building2, Users, MapPin, Calendar, Clock, FileText, Megaphone, BarChart3, Bell, Settings, Accessibility } from 'lucide-react';
 import type { UserRole } from '../types';
 
 interface NavItem {
@@ -31,6 +31,21 @@ export default function DashboardLayout() {
   const { resolved, setTheme } = useTheme();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Modo letra grande (persistido en localStorage)
+  const [largeMode, setLargeMode] = useState(() => {
+    return localStorage.getItem('largeMode') === 'true';
+  });
+
+  useEffect(() => {
+    const html = document.documentElement;
+    if (largeMode) {
+      html.classList.add('large-mode');
+    } else {
+      html.classList.remove('large-mode');
+    }
+    localStorage.setItem('largeMode', String(largeMode));
+  }, [largeMode]);
 
   const visibleItems = navItems.filter((item) => role && item.roles.includes(role));
 
@@ -70,6 +85,14 @@ export default function DashboardLayout() {
       </nav>
 
       <div className="p-3 border-t border-border space-y-2">
+        <button
+          onClick={() => setLargeMode(!largeMode)}
+          className={`flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm transition-colors ${largeMode ? 'bg-primary text-white' : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary'}`}
+        >
+          <Accessibility size={20} />
+          {largeMode ? '✓ Letra grande' : 'Letra grande'}
+        </button>
+
         <button
           onClick={() => setTheme(resolved === 'dark' ? 'light' : 'dark')}
           className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-text-secondary hover:bg-surface-hover transition-colors"
@@ -134,6 +157,14 @@ export default function DashboardLayout() {
             <Menu size={24} />
           </button>
           <h1 className="text-lg font-bold text-primary">PPAM Costa</h1>
+          <div className="flex-1" />
+          <button
+            onClick={() => setLargeMode(!largeMode)}
+            className={`p-2 rounded-lg transition-colors ${largeMode ? 'bg-primary text-white' : 'hover:bg-surface-hover text-text-secondary'}`}
+            title={largeMode ? 'Tamaño normal' : 'Letra grande'}
+          >
+            <Accessibility size={24} />
+          </button>
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">

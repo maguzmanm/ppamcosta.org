@@ -63,3 +63,64 @@ img {
   min-height: 100vh;
   min-height: 100dvh;
 }
+
+/* ─── Modo letra grande (móvil) ─── */
+@media (max-width: 767px) {
+  html.large-mode {
+    font-size: 18px;
+  }
+
+  html.large-mode button,
+  html.large-mode select,
+  html.large-mode input,
+  html.large-mode textarea {
+    font-size: 1rem !important;
+    padding: 0.625rem 0.875rem !important;
+    border-radius: 0.625rem !important;
+  }
+
+  html.large-mode table th,
+  html.large-mode table td {
+    font-size: 0.95rem !important;
+    padding: 0.75rem 0.75rem !important;
+  }
+
+  html.large-mode h2 {
+    font-size: 1.75rem !important;
+  }
+
+  html.large-mode h3 {
+    font-size: 1.35rem !important;
+  }
+
+  html.large-mode .text-sm {
+    font-size: 0.95rem !important;
+  }
+
+  html.large-mode .text-xs {
+    font-size: 0.85rem !important;
+  }
+
+  html.large-mode nav a,
+  html.large-mode nav button {
+    font-size: 1rem !important;
+    padding: 0.75rem 1rem !important;
+  }
+
+  html.large-mode nav svg {
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+  }
+
+  /* Badges más grandes */
+  html.large-mode .inline-flex.items-center.px-2 {
+    padding: 0.25rem 0.75rem !important;
+    font-size: 0.85rem !important;
+  }
+
+  /* Checkboxes más grandes */
+  html.large-mode input[type="checkbox"] {
+    width: 1.2rem !important;
+    height: 1.2rem !important;
+  }
+}
