@@ -75,13 +75,19 @@ export default function PublishersPage() {
     otherDesignation: '',
   });
 
-  const { data: publishers, isLoading } = useQuery({
+  const { data: publishersRaw, isLoading } = useQuery({
     queryKey: ['publishers', search],
     queryFn: async () => {
       const { data } = await api.get('/publishers', { params: { search: search || undefined } });
       return data as Publisher[];
     },
   });
+
+  // Añadir campo plano _role para ordenación
+  const publishers = (publishersRaw || []).map(p => ({
+    ...p,
+    _role: (p as any).user?.role || 'PUBLICADOR',
+  }));
 
   const { data: congregations } = useQuery({
     queryKey: ['congregations'],
@@ -282,7 +288,7 @@ export default function PublishersPage() {
           { key: 'name', header: 'Nombre', sortable: true, sortKey: 'lastName', render: (p) => formatName(p) },
           { key: 'email', header: 'Email', sortable: true, hideOnMobile: true, render: (p) => p.email || '-' },
           { key: 'phone', header: 'Teléfono', sortable: true, hideOnMobile: true, render: (p) => formatPhone(p.phone) },
-          { key: 'role', header: 'Rol', sortable: true, sortKey: 'user.role', render: (p) => roleBadge(p.user?.role) },
+          { key: 'role', header: 'Rol', sortable: true, render: (p) => roleBadge((p as any)._role) },
           { key: 'congregation', header: 'Congregación', sortable: true, sortKey: 'congregation.name', hideOnMobile: true, render: (p) => p.congregation?.name || '-' },
           { key: 'location', header: 'Puntos asignados', sortable: true, hideOnMobile: true, render: (p) => {
             const locs = (p as any).publisherLocations || [];
