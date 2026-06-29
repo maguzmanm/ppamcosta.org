@@ -32,9 +32,12 @@ export default function DashboardLayout() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Modo letra grande (persistido en localStorage)
+  // Modo letra grande (persistido en localStorage, por defecto activo en móvil)
   const [largeMode, setLargeMode] = useState(() => {
-    return localStorage.getItem('largeMode') === 'true';
+    const saved = localStorage.getItem('largeMode');
+    if (saved !== null) return saved === 'true';
+    // En móvil, letra grande por defecto
+    return window.innerWidth < 768;
   });
 
   useEffect(() => {
