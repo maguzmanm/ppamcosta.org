@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Pencil, Trash2, Upload } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2 } from 'lucide-react';
 import api from '../services/api';
 import DataTable from '../components/DataTable';
 import Modal from '../components/Modal';
@@ -238,28 +238,6 @@ export default function PublishersPage() {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <h2 className="text-2xl font-bold text-text-primary">Publicadores</h2>
-        <label className="inline-flex items-center gap-2 px-4 py-2 bg-success text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium cursor-pointer">
-          <Upload size={18} /> Importar Excel
-          <input type="file" accept=".xlsx,.xls" className="hidden" onChange={async (e) => {
-            const file = e.target.files?.[0];
-            if (!file) return;
-            try {
-              const XLSX = await import('xlsx');
-              const data = await file.arrayBuffer();
-              const wb = XLSX.read(data, { type: 'array' });
-              const sheet = wb.Sheets[wb.SheetNames[0]];
-              const rows = XLSX.utils.sheet_to_json(sheet);
-              if (!rows.length) { alert('El archivo está vacío'); return; }
-              const payload = { publishers: rows, defaultPassword: '123456' };
-              const res = await api.post('/publishers/import', payload);
-              alert(`Importados: ${res.data.ok} OK, ${res.data.errors} errores de ${res.data.total}`);
-              queryClient.invalidateQueries({ queryKey: ['publishers'] });
-            } catch (err: any) {
-              alert(err?.response?.data?.error || 'Error al importar');
-            }
-            e.target.value = '';
-          }} />
-        </label>
         <button
           onClick={openCreate}
           className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-light transition-colors text-sm font-medium"
