@@ -6,6 +6,7 @@ import {
   update,
   remove,
   hardDelete,
+  importPublishers,
   getAvailability,
   setAvailability,
   getAvailableForShift,
@@ -27,6 +28,7 @@ publisherRouter.get('/available-for-shift', authorize('COORDINADOR', 'ENCARGADO_
 publisherRouter.get('/available-spouses', authorize('COORDINADOR'), availableSpouses);
 publisherRouter.get('/:id', authorize('COORDINADOR', 'AUXILIAR', 'ENCARGADO_PUNTO', 'AUXILIAR_PUNTO'), getById);
 publisherRouter.post('/', authorize('COORDINADOR'), create);
+publisherRouter.post('/import', authorize('COORDINADOR'), importPublishers);
 publisherRouter.put('/:id', authorize('COORDINADOR'), update);
 publisherRouter.delete('/:id/hard', authorize('COORDINADOR'), hardDelete);
 publisherRouter.delete('/:id', authorize('COORDINADOR'), remove);

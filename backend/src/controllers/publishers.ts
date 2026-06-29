@@ -487,3 +487,95 @@ export async function deleteAbsence(req: Request, res: Response, next: NextFunct
     res.json({ message: 'Ausencia eliminada' });
   } catch (err) { next(err); }
 }
+
+// ─── Importación masiva ───
+
+export async function importPublishers(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { publishers, defaultPassword } = req.body;
+    if (!Array.isArray(publishers) || publishers.length === 0) {
+      throw new ValidationError('Se espera un arreglo de publicadores');
+    }
+
+    const results: { row: number; status: string; name?: string; error?: string }[] = [];
+    const password = defaultPassword || '123456';
+
+    for (let i = 0; i < publishers.length; i++) {
+      const p = publishers[i];
+      try {
+        if (!p.firstName || !p.lastName) {
+          results.push({ row: i + 1, status: 'error', error: 'Nombre y apellido requeridos' });
+          continue;
+        }
+        if (!p.congregationId) {
+          results.push({ row: i + 1, status: 'error', error: 'congregationId requerido', name: `${p.firstName} ${p.lastName}` });
+          continue;
+        }
+
+        // Verificar congregación
+        const cong = await prisma.congregation.findUnique({ where: { id: p.congregationId } });
+        if (!cong) {
+          results.push({ row: i + 1, status: 'error', error: `Congregación no encontrada: ${p.congregationId}`, name: `${p.firstName} ${p.lastName}` });
+          continue;
+        }
+
+        // Buscar cónyuge por email si aplica
+        let spouseId: string | null = null;
+        if (p.spouseEmail) {
+          const spouseUser = await prisma.user.findUnique({ where: { email: p.spouseEmail } });
+          if (spouseUser) {
+            const spousePub = await prisma.publisher.findUnique({ where: { id: spouseUser.publisherId } });
+            if (spousePub) spouseId = spousePub.id;
+          }
+        }
+
+        // Crear publicador
+        const publisher = await prisma.publisher.create({
+          data: {
+            firstName: p.firstName,
+            lastName: p.lastName,
+            marriedLastName: p.marriedLastName || null,
+            gender: p.gender || null,
+            designations: p.designations || null,
+            maritalStatus: p.maritalStatus || null,
+            spouseId,
+            phone: p.phone || null,
+            email: p.email || null,
+            notes: p.notes || null,
+            congregationId: p.congregationId,
+          },
+        });
+
+        // Crear usuario si tiene email
+        if (p.email) {
+          const existingUser = await prisma.user.findUnique({ where: { email: p.email } });
+          if (!existingUser) {
+            const passwordHash = await bcrypt.hash(password, 10);
+            await prisma.user.create({
+              data: { email: p.email, passwordHash, role: 'PUBLICADOR', publisherId: publisher.id },
+            });
+            await prisma.notificationPreference.create({ data: { userId: publisher.id } });
+          }
+        }
+
+        // Vincular cónyuge bidireccional
+        if (spouseId) {
+          await prisma.publisher.update({
+            where: { id: spouseId },
+            data: { spouseId: publisher.id, maritalStatus: 'CASADO' },
+          });
+        }
+
+        results.push({ row: i + 1, status: 'ok', name: `${p.firstName} ${p.lastName}` });
+      } catch (err: any) {
+        results.push({ row: i + 1, status: 'error', error: err?.message || 'Error desconocido', name: `${p.firstName || ''} ${p.lastName || ''}`.trim() || undefined });
+      }
+    }
+
+    const ok = results.filter(r => r.status === 'ok').length;
+    const errors = results.filter(r => r.status === 'error').length;
+    res.json({ total: publishers.length, ok, errors, results });
+  } catch (err) {
+    next(err);
+  }
+}
