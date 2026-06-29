@@ -107,7 +107,9 @@ export default function PublishersPage() {
       // Al editar, incluir al cónyuge actual aunque ya esté vinculado
       if (form.spouseId) params.includeId = form.spouseId;
       const { data } = await api.get('/publishers/available-spouses', { params });
-      return data as { id: string; firstName: string; lastName: string; marriedLastName?: string }[];
+      // Ordenar alfabéticamente por apellido y nombre
+      return (data as { id: string; firstName: string; lastName: string; marriedLastName?: string }[])
+        .sort((a, b) => `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`, 'es'));
     },
     enabled: form.maritalStatus === 'CASADO' && !!form.gender,
   });
