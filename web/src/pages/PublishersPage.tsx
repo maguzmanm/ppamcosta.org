@@ -230,14 +230,7 @@ export default function PublishersPage() {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <h2 className="text-2xl font-bold text-text-primary">Publicadores</h2>
-        <button
-          onClick={openCreate}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-light transition-colors text-sm font-medium"
-        >
-          <Plus size={18} />
-          Nuevo publicador
-        </button>
-        <label className="inline-flex items-center gap-2 px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary-light transition-colors text-sm font-medium cursor-pointer">
+        <label className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-light transition-colors text-sm font-medium cursor-pointer">
           <Upload size={18} /> Importar Excel
           <input type="file" accept=".xlsx,.xls" className="hidden" onChange={async (e) => {
             const file = e.target.files?.[0];
@@ -259,6 +252,13 @@ export default function PublishersPage() {
             e.target.value = '';
           }} />
         </label>
+        <button
+          onClick={openCreate}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary-light transition-colors text-sm font-medium"
+        >
+          <Plus size={18} />
+          Nuevo publicador
+        </button>
       </div>
 
       <div className="mb-4">
