@@ -288,7 +288,7 @@ export default function PublishersPage() {
           { key: 'name', header: 'Nombre', sortable: true, sortKey: 'lastName', render: (p) => formatName(p) },
           { key: 'email', header: 'Email', sortable: true, hideOnMobile: true, render: (p) => p.email || '-' },
           { key: 'phone', header: 'Teléfono', sortable: true, hideOnMobile: true, render: (p) => formatPhone(p.phone) },
-          { key: 'role', header: 'Rol', sortable: true, render: (p) => roleBadge((p as any)._role) },
+          { key: 'role', header: 'Rol', sortable: true, sortKey: '_role', render: (p) => roleBadge((p as any)._role) },
           { key: 'congregation', header: 'Congregación', sortable: true, sortKey: 'congregation.name', hideOnMobile: true, render: (p) => p.congregation?.name || '-' },
           { key: 'location', header: 'Puntos asignados', sortable: true, hideOnMobile: true, render: (p) => {
             const locs = (p as any).publisherLocations || [];
