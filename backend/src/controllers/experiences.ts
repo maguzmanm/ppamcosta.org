@@ -123,10 +123,10 @@ export async function update(req: Request, res: Response, next: NextFunction) {
 export async function review(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
-    const { status, title, content, reviewNotes } = req.body; // status: APROBADO | RECHAZADO
+    const { status, title, content, reviewNotes } = req.body;
 
-    if (!['APROBADO', 'RECHAZADO'].includes(status)) {
-      throw new ValidationError('El estado debe ser APROBADO o RECHAZADO');
+    if (!['APROBADO', 'RECHAZADO', 'PENDIENTE'].includes(status)) {
+      throw new ValidationError('El estado debe ser APROBADO, RECHAZADO o PENDIENTE');
     }
 
     const experience = await prisma.experience.findUnique({ where: { id } });
@@ -144,6 +144,21 @@ export async function review(req: Request, res: Response, next: NextFunction) {
     });
 
     res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ─── Eliminar experiencia (solo coordinador) ───
+
+export async function remove(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.params;
+    const experience = await prisma.experience.findUnique({ where: { id } });
+    if (!experience) throw new NotFoundError('Experiencia no encontrada');
+
+    await prisma.experience.delete({ where: { id } });
+    res.status(204).send();
   } catch (err) {
     next(err);
   }

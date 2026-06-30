@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { list, getById, create, update, review } from '../controllers/experiences';
+import { list, getById, create, update, review, remove } from '../controllers/experiences';
 import { authenticate } from '../middleware/auth';
 import { authorize } from '../middleware/authorize';
 
@@ -12,3 +12,4 @@ experienceRouter.get('/:id', authorize('COORDINADOR', 'AUXILIAR', 'ENCARGADO_PUN
 experienceRouter.post('/', authorize('COORDINADOR', 'AUXILIAR', 'ENCARGADO_PUNTO', 'AUXILIAR_PUNTO', 'ENCARGADO_EXPERIENCIAS', 'PUBLICADOR'), create);
 experienceRouter.put('/:id', authorize('COORDINADOR', 'ENCARGADO_EXPERIENCIAS'), update);
 experienceRouter.put('/:id/review', authorize('COORDINADOR', 'ENCARGADO_EXPERIENCIAS'), review);
+experienceRouter.delete('/:id', authorize('COORDINADOR'), remove);

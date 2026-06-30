@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Check, X, FileText, Pencil, Plus, RotateCcw } from 'lucide-react';
+import { Check, X, FileText, Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import api from '../services/api';
 import Badge from '../components/Badge';
 import Modal from '../components/Modal';
@@ -13,7 +13,7 @@ const statusBadge: Record<string, 'success' | 'warning' | 'danger'> = {
 
 export default function ExperiencesPage() {
   const queryClient = useQueryClient();
-  const { canManageExperiences } = useAuth();
+  const { canManageExperiences, isCoordinator } = useAuth();
 
   // ─── Editar experiencia ───
   const [editModal, setEditModal] = useState(false);
@@ -65,6 +65,11 @@ export default function ExperiencesPage() {
     onError: (err: any) => {
       setCreateMessage('❌ ' + (err.response?.data?.error || 'Error al crear'));
     },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/experiences/${id}`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['experiences'] }),
   });
 
   function openEditModal(e: Experience) {
@@ -157,6 +162,12 @@ export default function ExperiencesPage() {
                       className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-white bg-amber-500 rounded-md hover:bg-amber-600 transition-colors">
                       <RotateCcw size={14} /> Revertir
                     </button>
+                    {isCoordinator && (
+                      <button onClick={() => { if (confirm('¿Eliminar esta experiencia definitivamente?')) deleteMutation.mutate(e.id); }}
+                        className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-white bg-danger rounded-md hover:bg-red-700 transition-colors">
+                        <Trash2 size={14} /> Eliminar
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
