@@ -115,7 +115,7 @@ export default function PublishersPage() {
       const { data } = await api.get('/publishers/available-spouses', { params });
       // Ordenar alfabéticamente por apellido y nombre
       return (data as { id: string; firstName: string; lastName: string; marriedLastName?: string }[])
-        .sort((a, b) => `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`, 'es'));
+        .sort((a, b) => `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`, 'es'));
     },
     enabled: form.maritalStatus === 'CASADO' && !!form.gender,
   });

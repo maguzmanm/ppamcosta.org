@@ -300,7 +300,7 @@ export async function availableSpouses(req: Request, res: Response, next: NextFu
         marriedLastName: true,
         gender: true,
       },
-      orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+      orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
     });
 
     res.json(available);
