@@ -1,10 +1,41 @@
+import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { Sun, Moon, Monitor } from 'lucide-react';
+import { Sun, Moon, Monitor, Lock } from 'lucide-react';
+import api from '../services/api';
 
 export default function ProfilePage() {
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
+
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [pwMessage, setPwMessage] = useState('');
+  const [pwLoading, setPwLoading] = useState(false);
+
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setPwMessage('');
+    if (newPassword !== confirmPassword) {
+      setPwMessage('❌ Las contraseñas nuevas no coinciden');
+      return;
+    }
+    if (newPassword.length < 4) {
+      setPwMessage('❌ La contraseña debe tener al menos 4 caracteres');
+      return;
+    }
+    setPwLoading(true);
+    try {
+      await api.put('/auth/change-password', { currentPassword, newPassword });
+      setPwMessage('✅ Contraseña actualizada correctamente');
+      setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
+    } catch (err: any) {
+      setPwMessage('❌ ' + (err.response?.data?.error || 'Error al cambiar contraseña'));
+    } finally {
+      setPwLoading(false);
+    }
+  }
 
   return (
     <div>
@@ -49,6 +80,51 @@ export default function ProfilePage() {
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="bg-surface rounded-xl p-6 border border-border">
+          <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+            <Lock size={18} /> Cambiar contraseña
+          </h3>
+          <form onSubmit={handleChangePassword} className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-1">Contraseña actual</label>
+              <input
+                type="password" required
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-1">Nueva contraseña</label>
+              <input
+                type="password" required
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-1">Confirmar nueva contraseña</label>
+              <input
+                type="password" required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
+            {pwMessage && (
+              <p className={`text-sm ${pwMessage.startsWith('✅') ? 'text-success' : 'text-danger'}`}>{pwMessage}</p>
+            )}
+            <button
+              type="submit"
+              disabled={pwLoading}
+              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-light disabled:opacity-50 transition-colors text-sm font-medium"
+            >
+              {pwLoading ? 'Cambiando...' : 'Cambiar contraseña'}
+            </button>
+          </form>
         </div>
 
         <button

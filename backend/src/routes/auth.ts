@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, login, me, listUsers, updateRole, forgotPassword, resetPassword } from '../controllers/auth';
+import { register, login, me, listUsers, updateRole, forgotPassword, resetPassword, changePassword } from '../controllers/auth';
 import { authenticate } from '../middleware/auth';
 import { authorize } from '../middleware/authorize';
 
@@ -12,3 +12,4 @@ authRouter.post('/reset-password', resetPassword);
 authRouter.get('/me', authenticate, me);
 authRouter.get('/users', authenticate, authorize('COORDINADOR'), listUsers);
 authRouter.put('/users/:id/role', authenticate, authorize('COORDINADOR'), updateRole);
+authRouter.put('/change-password', authenticate, changePassword);
