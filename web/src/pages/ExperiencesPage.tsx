@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Check, X, FileText, Pencil, Plus } from 'lucide-react';
+import { Check, X, FileText, Pencil, Plus, RotateCcw } from 'lucide-react';
 import api from '../services/api';
 import Badge from '../components/Badge';
 import Modal from '../components/Modal';
@@ -148,6 +148,14 @@ export default function ExperiencesPage() {
                     <button onClick={() => { const notes = prompt('Motivo del rechazo:'); if (notes) reviewMutation.mutate({ id: e.id, status: 'RECHAZADO', reviewNotes: notes }); }}
                       className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-white bg-danger rounded-md hover:bg-red-700 transition-colors">
                       <X size={14} /> Rechazar
+                    </button>
+                  </div>
+                )}
+                {canManageExperiences && (e.status === 'APROBADO' || e.status === 'RECHAZADO') && (
+                  <div className="flex gap-1 shrink-0">
+                    <button onClick={() => { if (confirm('¿Revertir esta experiencia a pendiente?')) reviewMutation.mutate({ id: e.id, status: 'PENDIENTE' }); }}
+                      className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-white bg-amber-500 rounded-md hover:bg-amber-600 transition-colors">
+                      <RotateCcw size={14} /> Revertir
                     </button>
                   </div>
                 )}
