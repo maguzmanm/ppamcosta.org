@@ -143,7 +143,6 @@ export default function DashboardPage() {
                             msg += '\nAuxiliares:\n';
                             auxiliares.forEach((a: any) => { msg += `  ${fmtPerson(a)}\n`; });
                           }
-                          msg += '\nO al coordinador de tu congregación.';
                           alert(msg);
                         }}
                         className="px-2 py-1 text-xs text-white bg-amber-500 rounded-md hover:bg-amber-600"
