@@ -277,21 +277,15 @@ export async function updateRole(req: Request, res: Response, next: NextFunction
 export async function changePassword(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user!.userId;
-    const { currentPassword, newPassword } = req.body;
+    const { newPassword } = req.body;
 
-    if (!currentPassword || !newPassword) {
-      throw new ValidationError('Debes ingresar la contraseña actual y la nueva');
+    if (!newPassword) {
+      throw new ValidationError('Debes ingresar la nueva contraseña');
     }
 
     if (newPassword.length < 4) {
       throw new ValidationError('La nueva contraseña debe tener al menos 4 caracteres');
     }
-
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new NotFoundError('Usuario no encontrado');
-
-    const valid = await bcrypt.compare(currentPassword, user.passwordHash);
-    if (!valid) throw new ValidationError('La contraseña actual es incorrecta');
 
     const passwordHash = await bcrypt.hash(newPassword, 10);
     await prisma.user.update({

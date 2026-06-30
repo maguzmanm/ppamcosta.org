@@ -8,7 +8,6 @@ export default function ProfilePage() {
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
 
-  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [pwMessage, setPwMessage] = useState('');
@@ -27,9 +26,9 @@ export default function ProfilePage() {
     }
     setPwLoading(true);
     try {
-      await api.put('/auth/change-password', { currentPassword, newPassword });
+      await api.put('/auth/change-password', { newPassword });
       setPwMessage('✅ Contraseña actualizada correctamente');
-      setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
+      setNewPassword(''); setConfirmPassword('');
     } catch (err: any) {
       setPwMessage('❌ ' + (err.response?.data?.error || 'Error al cambiar contraseña'));
     } finally {
@@ -87,15 +86,6 @@ export default function ProfilePage() {
             <Lock size={18} /> Cambiar contraseña
           </h3>
           <form onSubmit={handleChangePassword} className="space-y-3">
-            <div>
-              <label className="block text-sm font-medium text-text-secondary mb-1">Contraseña actual</label>
-              <input
-                type="password" required
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-border bg-surface text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            </div>
             <div>
               <label className="block text-sm font-medium text-text-secondary mb-1">Nueva contraseña</label>
               <input
