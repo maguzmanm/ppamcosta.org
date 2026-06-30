@@ -6,6 +6,7 @@ export async function list(_req: Request, res: Response, next: NextFunction) {
   try {
     const locations = await prisma.location.findMany({
       include: {
+        _count: { select: { publisherLocations: true } },
         locationAssignments: {
           include: {
             user: {

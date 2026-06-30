@@ -102,6 +102,9 @@ export default function LocationsPage() {
               </a>
             </div>
           )},
+          { key: 'publishers', header: 'Publicadores', sortable: true, sortKey: '_count.publisherLocations', render: (l) => (
+            <span className="text-sm font-medium">{(l as any)._count?.publisherLocations ?? 0}</span>
+          )},
           { key: 'status', header: 'Estado', sortable: true, sortKey: 'isActive', render: (l) => l.isActive ? <span className="text-success text-xs font-medium">Activo</span> : <span className="text-text-muted text-xs">Inactivo</span> },
           { key: 'actions', header: '', className: 'w-20',
             render: (l) => (
