@@ -126,6 +126,30 @@ export default function DashboardPage() {
                         <button onClick={() => respondMutation.mutate({ shiftId: s.id, response: 'RECHAZADO' })}
                           className="px-2 py-1 text-xs text-white bg-danger rounded-md"><X size={14} /> Rechazar</button>
                       </div>
+                    ) : myStatus === 'ACEPTADO' ? (
+                      <button
+                        onClick={() => {
+                          const locAssignments = s.location?.locationAssignments || [];
+                          const encargado = locAssignments.find((a: any) => a.roleAtLocation === 'ENCARGADO');
+                          const auxiliares = locAssignments.filter((a: any) => a.roleAtLocation === 'AUXILIAR');
+                          const fmtPerson = (a: any) => {
+                            const p = a?.user?.publisher;
+                            return p ? `${p.firstName} ${p.lastName}${p.phone ? ' - ' + p.phone : ''}` : '';
+                          };
+                          let msg = 'No puedes cancelar un turno ya aceptado.\n\n';
+                          msg += 'Contacta al encargado del punto:\n';
+                          msg += encargado ? `  ${fmtPerson(encargado)}\n` : '  No asignado\n';
+                          if (auxiliares.length > 0) {
+                            msg += '\nAuxiliares:\n';
+                            auxiliares.forEach((a: any) => { msg += `  ${fmtPerson(a)}\n`; });
+                          }
+                          msg += '\nO al coordinador de tu congregación.';
+                          alert(msg);
+                        }}
+                        className="px-2 py-1 text-xs text-white bg-amber-500 rounded-md hover:bg-amber-600"
+                      >
+                        <X size={14} /> Cancelar
+                      </button>
                     ) : <span className="text-xs text-text-muted">—</span>}
                   </td>
                 </tr>
