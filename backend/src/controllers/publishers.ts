@@ -99,11 +99,12 @@ export async function create(req: Request, res: Response, next: NextFunction) {
       });
     }
 
-    // Si se proporciona email y contraseña, crear usuario automáticamente
-    if (email && password) {
+    // Si se proporciona email, crear usuario (contraseña por defecto: 123456)
+    if (email) {
+      const finalPassword = password || '123456';
       const existingUser = await prisma.user.findUnique({ where: { email } });
       if (!existingUser) {
-        const passwordHash = await bcrypt.hash(password, 10);
+        const passwordHash = await bcrypt.hash(finalPassword, 10);
         const user = await prisma.user.create({
           data: { email, passwordHash, role: role || 'PUBLICADOR', publisherId: publisher.id },
         });
